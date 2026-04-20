@@ -60,11 +60,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun fetchGames() {
         viewModelScope.launch {
             isLoadingGames.value = true
-            val fetched = repo.fetchGames()
+            val fetched = repo.fetchGameList()
             games.value = fetched
             // Pick 4 random suggested games — fallback to static list if empty
             val source = if (fetched.isNotEmpty())
-                fetched.map { it.gameType }.shuffled().take(4)
+                fetched.mapNotNull { it.resolvedType }.shuffled().take(4)
             else
                 GameType.allTypes().shuffled().take(4)
             suggestedGames.value = source

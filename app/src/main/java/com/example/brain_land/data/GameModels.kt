@@ -71,3 +71,25 @@ enum class GameType(val displayName: String, val gameId: String) {
 }
 
 // Leaderboard models live in LeaderboardModels.kt
+
+// ──────────────────────────────────────────────────────────
+// GameItem — mirrors iOS GameItem struct (GameDataManager.swift)
+// Fields from /getGameList response
+// ──────────────────────────────────────────────────────────
+
+data class GameItem(
+    val id: String,
+    val name: String,           // Display name from backend
+    val subtitle: String = "",
+    val gameType: String,       // Raw string e.g. ".pipeConnect" or "pipeConnect"
+    val hasStoryMode: Boolean = false,
+    val requiresPro: Boolean = false,
+    val order: Int = 0,
+    val isVisible: Boolean = true
+) {
+    // Resolve to typed enum
+    val resolvedType: GameType? get() = GameType.from(gameType)
+
+    // Display name: use backend name, fall back to enum name
+    val displayName: String get() = name.ifEmpty { resolvedType?.displayName ?: gameType }
+}

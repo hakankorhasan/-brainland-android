@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.UUID
 
 private const val TAG_HOME = "HomeRepo"
 private const val BASE = "https://us-central1-mini-games-9a4e1.cloudfunctions.net"
@@ -61,32 +62,72 @@ class HomeRepository {
     }
 
     // ──────────────────────────────────────────────────────────
-    // GET /getGames  (game list for home screen)
+    // GET /getGameList  — mirrors iOS GameDataManager.fetchGames()
+    //
+    // • Only isVisible=true items are returned
+    // • Sorted by `order`
+    // • Local-only games (pathClearing, liquidSort) appended if not
+    //   already present in the backend list (mirrors iOS visibleGameTypes)
     // ──────────────────────────────────────────────────────────
 
-    suspend fun fetchGames(): List<GameItem> = withContext(Dispatchers.IO) {
+    suspend fun fetchGameList(): List<GameItem> = withContext(Dispatchers.IO) {
         try {
-            val text = get("$BASE/getGames")
-            Log.d(TAG_HOME, "Games raw: ${text.take(200)}")
-            val json = JSONObject(text)
-            if (!json.optBoolean("success", false)) return@withContext emptyList()
+            val text = get("$BASE/getGameList")
+            Log.d(TAG_HOME, "🎮 getGameList raw: ${text.take(400)}")
 
-            val arr = json.optJSONArray("games") ?: return@withContext emptyList()
-            (0 until arr.length()).mapNotNull { i ->
+            val json = JSONObject(text)
+            if (!json.optBoolean("success", false)) {
+                Log.w(TAG_HOME, "🎮 getGameList not success — using local fallback")
+                return@withContext localOnlyFallback()
+            }
+
+            val arr = json.optJSONArray("games") ?: return@withContext localOnlyFallback()
+
+            val items = (0 until arr.length()).mapNotNull { i ->
                 val g = arr.getJSONObject(i)
-                val typeStr = g.optString("gameType")
-                val gt = GameType.from(typeStr) ?: return@mapNotNull null
+                val isVisible = g.optBoolean("isVisible", true)
+                if (!isVisible) return@mapNotNull null
+
                 GameItem(
-                    id       = g.optString("id"),
-                    gameType = gt,
-                    name     = g.optString("name", gt.displayName),
-                    subtitle = g.optString("subtitle", ""),
-                    order    = g.optInt("order", 99)
+                    id           = g.optString("id", UUID.randomUUID().toString()),
+                    name         = g.optString("name", ""),
+                    subtitle     = g.optString("subtitle", ""),
+                    gameType     = g.optString("gameType", ""),
+                    hasStoryMode = g.optBoolean("hasStoryMode", false),
+                    requiresPro  = g.optBoolean("requiresPro", false),
+                    order        = g.optInt("order", 0),
+                    isVisible    = true
                 )
             }.sortedBy { it.order }
+
+            Log.d(TAG_HOME, "🎮 ✅ ${items.size} visible games loaded")
+
+            // Mirror iOS: append local-only games if missing
+            val result = items.toMutableList()
+            addLocalOnlyIfMissing(result, ".pathClearing")
+            addLocalOnlyIfMissing(result, ".liquidSort")
+            result
+
         } catch (e: Exception) {
-            Log.e(TAG_HOME, "fetchGames error: ${e.message}")
-            emptyList()
+            Log.e(TAG_HOME, "🎮 fetchGameList error: ${e.message}")
+            localOnlyFallback()
+        }
+    }
+
+    // Mirror iOS local-only games (not yet on backend)
+    private fun localOnlyFallback(): List<GameItem> = listOf(
+        GameItem(id = "pathClearing", name = "Path Clearing", gameType = ".pathClearing", order = 98),
+        GameItem(id = "liquidSort",   name = "Liquid Sort",   gameType = ".liquidSort",   order = 99)
+    )
+
+    private fun addLocalOnlyIfMissing(list: MutableList<GameItem>, gameTypeStr: String) {
+        val alreadyPresent = list.any { item ->
+            item.gameType == gameTypeStr ||
+            item.gameType == gameTypeStr.trimStart('.')
+        }
+        if (!alreadyPresent) {
+            val gt = GameType.from(gameTypeStr) ?: return
+            list.add(GameItem(id = gt.gameId, name = gt.displayName, gameType = gameTypeStr, order = 99))
         }
     }
 
@@ -98,16 +139,8 @@ class HomeRepository {
         val conn = java.net.URL(urlStr).openConnection() as java.net.HttpURLConnection
         conn.requestMethod = "GET"
         conn.connectTimeout = 10_000
-        conn.readTimeout = 10_000
+        conn.readTimeout    = 10_000
         return try { conn.inputStream.bufferedReader().readText() }
         finally { conn.disconnect() }
     }
 }
-
-data class GameItem(
-    val id: String,
-    val gameType: GameType,
-    val name: String,
-    val subtitle: String,
-    val order: Int
-)

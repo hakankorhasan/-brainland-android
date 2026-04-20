@@ -781,15 +781,9 @@ private fun SectionTitle(title: String) {
 
 @Composable
 private fun GamesTabContent(suggested: List<GameType>) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BgCard)
-            .statusBarsPadding(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("🎮 All Games\n(Coming soon)", color = Color.White, textAlign = TextAlign.Center, fontSize = 18.sp)
-    }
+    GamesScreen(
+        onSelectGame = { /* TODO: navigate to game */ }
+    )
 }
 
 @Composable
