@@ -51,7 +51,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun fetchLeaderboard() {
         viewModelScope.launch {
             isLoadingLeader.value = true
-            leaderboard.value = repo.fetchLeaderboard(limit = 3)
+            val deviceId = prefs.deviceId.first()
+            leaderboard.value = repo.fetchGlobalLeaderboard(limit = 3, deviceId = deviceId)
             isLoadingLeader.value = false
         }
     }

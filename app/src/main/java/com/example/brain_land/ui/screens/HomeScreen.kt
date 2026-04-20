@@ -663,7 +663,7 @@ private fun LeaderboardCard(
                     LeaderboardRow(
                         rank = player.rank,
                         name = player.displayName,
-                        score = player.score,
+                        score = player.displayScore,
                         avatarUrl = player.avatarUrl,
                         isLoading = false
                     )
@@ -794,15 +794,7 @@ private fun GamesTabContent(suggested: List<GameType>) {
 
 @Composable
 private fun LeaderboardTabContent(leaderboard: LeaderboardResponse?, isLoading: Boolean) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BgCard)
-            .statusBarsPadding(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("🏆 Leaderboard\n(Coming soon)", color = Color.White, textAlign = TextAlign.Center, fontSize = 18.sp)
-    }
+    LeaderboardScreen()
 }
 
 @Composable

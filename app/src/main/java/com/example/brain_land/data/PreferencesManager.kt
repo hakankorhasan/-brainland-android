@@ -32,6 +32,9 @@ class PreferencesManager(private val context: Context) {
     val avatarUrl: Flow<String> = context.dataStore.data
         .map { prefs -> prefs[KEY_AVATAR_URL] ?: "" }
 
+    val deviceId: Flow<String> = context.dataStore.data
+        .map { prefs -> prefs[KEY_DEVICE_ID] ?: "" }
+
     suspend fun markOnboardingSeen() {
         context.dataStore.edit { prefs ->
             prefs[KEY_HAS_SEEN_ONBOARDING] = true

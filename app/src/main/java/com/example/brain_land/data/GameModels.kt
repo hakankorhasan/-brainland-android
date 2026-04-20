@@ -70,19 +70,4 @@ enum class GameType(val displayName: String, val gameId: String) {
     }
 }
 
-// Leaderboard models
-data class LeaderboardPlayer(
-    val uid: String = "",
-    val rank: Int = 0,
-    val displayName: String = "",
-    val score: Int = 0,
-    val avatarUrl: String? = null,
-    val tier: String = "bronze"
-)
-
-data class LeaderboardResponse(
-    val players: List<LeaderboardPlayer> = emptyList(),
-    val myScore: Int = 0,
-    val myRank: Int = 0,
-    val myTier: String = "bronze"
-)
+// Leaderboard models live in LeaderboardModels.kt
