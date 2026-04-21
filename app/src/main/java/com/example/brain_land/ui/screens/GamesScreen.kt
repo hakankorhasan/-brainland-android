@@ -447,18 +447,31 @@ fun GameCard(
                 .background(fg.copy(alpha = 0.03f), CircleShape)
         )
 
-        // Emoji icon — centered, shifted up
+        // Icon — asset PNG if available, emoji fallback
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = if (game == GameType.BINARY_PUZZLE) "01" else game.emoji,
-                fontSize = if (game == GameType.BINARY_PUZZLE) 30.sp else 44.sp,
-                fontWeight = FontWeight.Bold,
-                color = fg,
-                modifier = Modifier.offset(y = (-14).dp)
-            )
+            val assetRes = game.assetIcon
+            if (assetRes != null) {
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(assetRes),
+                    contentDescription = game.displayName,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                    modifier = Modifier
+                        .size(68.dp)
+                        .offset(y = (-10).dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                )
+            } else {
+                Text(
+                    text = if (game == GameType.BINARY_PUZZLE) "01" else game.emoji,
+                    fontSize = if (game == GameType.BINARY_PUZZLE) 30.sp else 44.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = fg,
+                    modifier = Modifier.offset(y = (-14).dp)
+                )
+            }
         }
 
         // Bottom black gradient (40% of 160dp = 64dp)

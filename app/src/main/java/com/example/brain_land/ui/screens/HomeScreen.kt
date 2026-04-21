@@ -202,7 +202,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
             }
         }
 
-        if (activeGame == GameType.NEURAL_LINK || activeGame == GameType.NUMBER_CIRCUIT) {
+        if (activeGame == GameType.NEURAL_LINK) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -212,6 +212,20 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 com.example.brain_land.ui.games.neurallink.NeuralLinkPuzzleView(
                     onHome           = { activeGame = null },
                     onNavigateToGame = { targetGame -> activeGame = targetGame }
+                )
+            }
+        }
+
+        if (activeGame == GameType.NUMBER_CIRCUIT) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF10131B))
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent() } } }
+            ) {
+                com.example.brain_land.ui.games.numbercircuit.NumberCircuitPuzzleView(
+                    onHome           = { activeGame = null },
+                    onNavigateToGame = { targetGame -> activeGame = targetGame as? com.example.brain_land.data.GameType }
                 )
             }
         }
@@ -663,12 +677,24 @@ private fun HomeGameCard(game: GameType, onClick: () -> Unit = {}) {
                     .offset(30.dp, (-15).dp)
                     .background(fg.copy(alpha = 0.04f), CircleShape)
             )
-            Text(
-                text = if (game == GameType.BINARY_PUZZLE) "01" else game.emoji,
-                fontSize = if (game == GameType.BINARY_PUZZLE) 22.sp else 30.sp,
-                fontWeight = FontWeight.Bold,
-                color = fg
-            )
+            val assetRes = game.assetIcon
+            if (assetRes != null) {
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(assetRes),
+                    contentDescription = game.displayName,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                )
+            } else {
+                Text(
+                    text = if (game == GameType.BINARY_PUZZLE) "01" else game.emoji,
+                    fontSize = if (game == GameType.BINARY_PUZZLE) 22.sp else 30.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = fg
+                )
+            }
         }
 
         // Name bar
