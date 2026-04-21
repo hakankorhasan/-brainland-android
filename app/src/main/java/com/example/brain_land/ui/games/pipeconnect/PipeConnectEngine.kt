@@ -185,20 +185,25 @@ class PipeConnectEngine(
 
         cells = newGrid
 
-        val expectedFirstCellR = sourceRow + sourceDirection.dr
-        val expectedFirstCellC = sourceCol + sourceDirection.dc
-
-        // if starting off board
-        val actualStartR = if (sourceRow < 0 || sourceRow >= size) sourceRow + sourceDirection.dr else sourceRow
-        val actualStartC = if (sourceCol < 0 || sourceCol >= size) sourceCol + sourceDirection.dc else sourceCol
-
-        val firstCell = cells.getOrNull(actualStartR)?.getOrNull(actualStartC)
-        if (firstCell == null || !firstCell.connects(sourceDirection.opposite)) {
+        // Source must connect in the source direction (entry from outside)
+        val firstCell = cells.getOrNull(sourceRow)?.getOrNull(sourceCol)
+        if (firstCell == null || !firstCell.connects(sourceDirection)) {
             lastFlowResult = FlowResult.NO_CONNECTION
             isAnimatingWater = true
             
-            // Just fail immediately, no water connection locally available
-            scope.launch {
+            // Fail immediately, but mark the source cell as leaking
+            val failMut = cells.map { it.toMutableList() }.toMutableList()
+            if (firstCell != null) {
+                failMut[sourceRow][sourceCol] = failMut[sourceRow][sourceCol].copy(
+                    isFilled = true,
+                    isLeaking = true,
+                    waterEntry = sourceDirection,
+                    waterDirections = setOf(sourceDirection)
+                )
+            }
+            cells = failMut
+
+            scope.launch(Dispatchers.Main) {
                 delay(1500)
                 handleFailure()
                 delay(500)
@@ -207,7 +212,7 @@ class PipeConnectEngine(
             return
         }
 
-        val traceResult = traceWaterPath(actualStartR, actualStartC, sourceDirection.opposite)
+        val traceResult = traceWaterPath()
         isAnimatingWater = true
         lastFlowResult = if (traceResult.reachedSink) FlowResult.SUCCESS else FlowResult.FAILED
         
@@ -221,15 +226,15 @@ class PipeConnectEngine(
         val updatedGrid: List<List<PipeCell>>
     )
     
-    private fun traceWaterPath(startR: Int, startC: Int, startCameFrom: PipeDirection): TraceResult {
+    private fun traceWaterPath(): TraceResult {
         val path = mutableListOf<Pair<Int, Int>>()
         val visited = mutableSetOf<String>()
         val cellDirections = mutableMapOf<String, MutableSet<PipeDirection>>()
         val entryDirs = mutableMapOf<String, PipeDirection>()
         
-        var currentR = startR
-        var currentC = startC
-        var cameFrom = startCameFrom
+        var currentR = sourceRow
+        var currentC = sourceCol
+        var cameFrom = sourceDirection // water enters from sourceDirection
         
         val gridCopy = cells.map { it.map { c -> c.copy() }.toMutableList() }.toMutableList()
 
@@ -244,24 +249,22 @@ class PipeConnectEngine(
 
             val cell = gridCopy[currentR][currentC]
 
-            val connectsToSink = (currentR + sinkDirection.opposite.dr == sinkRow) && 
-                                 (currentC + sinkDirection.opposite.dc == sinkCol) &&
-                                 cell.connects(sinkDirection.opposite)
-
-            if (connectsToSink) {
-                cellDirections.getOrPut(key) { mutableSetOf() }.add(sinkDirection.opposite)
+            // Check: did we reach the sink and it connects out?
+            if (currentR == sinkRow && currentC == sinkCol && cell.connects(sinkDirection)) {
+                cellDirections.getOrPut(key) { mutableSetOf() }.add(sinkDirection)
                 applyWaterDirections(gridCopy, cellDirections, entryDirs)
                 return TraceResult(path, true, gridCopy)
             }
 
-            var exitDirs = cell.connections.toMutableSet()
+            // Get exit directions (exclude where water came from)
+            val exitDirs = cell.connections.toMutableSet()
             exitDirs.remove(cameFrom)
 
+            // Sort: prefer directions closer to sink
             val sortedDirs = exitDirs.sortedBy { dir ->
-                val ar = currentR + dir.dr
-                val ac = currentC + dir.dc
-                val aDist = abs(ar - sinkRow) + abs(ac - sinkCol)
-                aDist
+                val br = currentR + dir.dr
+                val bc = currentC + dir.dc
+                kotlin.math.abs(br - sinkRow) + kotlin.math.abs(bc - sinkCol)
             }
 
             var foundNext = false
