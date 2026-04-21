@@ -557,6 +557,7 @@ private fun readGameLevel(context: android.content.Context, game: GameType): Int
     val (prefsName, key) = when (game) {
         GameType.TILT_MAZE   -> "tiltmaze_prefs"   to "currentLevel"
         GameType.LIQUID_SORT -> "liquidsort_prefs"  to "currentLevel"
+        GameType.PATH_CLEARING -> "arrowpuzzle_prefs" to "currentLevel"
         else                 -> return 1
     }
     return context

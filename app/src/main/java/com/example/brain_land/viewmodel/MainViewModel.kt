@@ -51,7 +51,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
     // ── Device ID ──
-    private var deviceId: String = repository.generateDeviceId()
+    private var deviceId: String = ""
 
     // ──────────────────────────────────────────────────────────
     // Splash init
@@ -59,9 +59,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         viewModelScope.launch {
-            // Read DataStore values safely (suspends until first emission)
-            val hasSeen = prefs.hasSeenOnboarding.first()
-            val hasPro  = prefs.hasProfile.first()
+            // 1. Recover or Generate persistent Device ID
+            var savedId = prefs.deviceId.first()
+            if (savedId.isEmpty()) {
+                @android.annotation.SuppressLint("HardwareIds")
+                val androidId = android.provider.Settings.Secure.getString(
+                    application.contentResolver,
+                    android.provider.Settings.Secure.ANDROID_ID
+                )
+                savedId = if (!androidId.isNullOrEmpty() && androidId != "9774d56d682e549c") {
+                    androidId
+                } else {
+                    repository.generateDeviceId()
+                }
+                prefs.saveDeviceId(savedId)
+            }
+            deviceId = savedId
+
+            // 2. Read basic local states
+            var hasSeen = prefs.hasSeenOnboarding.first()
+            var hasPro  = prefs.hasProfile.first()
+
+            // 3. Transparent Re-login (Keychain-like behavior across uninstalls)
+            if (!hasPro) {
+                val restoredProfile = repository.getProfile(deviceId)
+                if (restoredProfile != null && restoredProfile.nickname.isNotEmpty()) {
+                    prefs.saveProfile(restoredProfile.nickname, restoredProfile.avatarUrl)
+                    prefs.markOnboardingSeen() // Auto-skip onboarding if they played before
+                    hasPro = true
+                    hasSeen = true
+                }
+            }
 
             // Load onboarding slides in background
             loadOnboardingSlides()

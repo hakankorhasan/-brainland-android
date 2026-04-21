@@ -130,6 +130,26 @@ class Repository {
         }
     }
 
+    suspend fun getProfile(deviceId: String): UserProfile? = withContext(Dispatchers.IO) {
+        try {
+            val text = get("$BASE_URL/getProfile?deviceId=$deviceId")
+            val json = JSONObject(text)
+            if (json.optBoolean("success", false) && json.has("profile")) {
+                val p = json.getJSONObject("profile")
+                UserProfile(
+                    deviceId = p.optString("deviceId", deviceId),
+                    nickname = p.optString("nickname", ""),
+                    age = p.optInt("age", 18),
+                    avatarId = p.optString("avatarId", ""),
+                    avatarUrl = p.optString("avatarUrl", "")
+                )
+            } else null
+        } catch (e: Exception) {
+            Log.e(TAG, "getProfile error: ${e.message}")
+            null
+        }
+    }
+
     fun generateDeviceId(): String = UUID.randomUUID().toString()
 
     // ──────────────────────────────────────────────────────────
