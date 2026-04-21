@@ -389,21 +389,33 @@ fun PipeConnectBoard(engine: PipeConnectEngine) {
                     }
                 }
                 
-                // Grid Cells
-                Column {
-                    for (row in 0 until size) {
-                        Row {
-                            for (col in 0 until size) {
-                                val cell = engine.cells.getOrNull(row)?.getOrNull(col)
-                                if (cell != null) {
-                                    PipeCellView(
-                                        cell = cell,
-                                        isAnimating = engine.isAnimatingWater,
-                                        cellSize = cellSizeDp,
-                                        onTap = { engine.rotatePipe(row, col) }
-                                    )
-                                } else {
-                                    Spacer(modifier = Modifier.size(cellSizeDp))
+                // Grid Cells container with stylized dark background
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color(0xFF1E212B), Color(0xFF13151D))
+                            )
+                        )
+                        .border(1.dp, Color.White.copy(0.08f), RoundedCornerShape(12.dp))
+                        .padding(2.dp)
+                ) {
+                    Column {
+                        for (row in 0 until size) {
+                            Row {
+                                for (col in 0 until size) {
+                                    val cell = engine.cells.getOrNull(row)?.getOrNull(col)
+                                    if (cell != null) {
+                                        PipeCellView(
+                                            cell = cell,
+                                            isAnimating = engine.isAnimatingWater,
+                                            cellSize = cellSizeDp,
+                                            onTap = { engine.rotatePipe(row, col) }
+                                        )
+                                    } else {
+                                        Spacer(modifier = Modifier.size(cellSizeDp))
+                                    }
                                 }
                             }
                         }
@@ -502,7 +514,8 @@ fun PipeCellView(cell: PipeCell, isAnimating: Boolean, cellSize: androidx.compos
     Box(
         modifier = Modifier
             .size(cellSize)
-            .background(Color.White.copy(0.02f))
+            .background(Color.White.copy(0.015f))
+            .border(0.5.dp, Color.White.copy(0.02f))
             .clickable(enabled = !cell.isBlocked && !cell.isLocked && !isAnimating) { onTap() },
         contentAlignment = Alignment.Center
     ) {
