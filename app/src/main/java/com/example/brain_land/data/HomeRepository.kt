@@ -131,9 +131,38 @@ class HomeRepository {
         }
     }
 
-    // ──────────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────────────────
+    // GET /getPlayerProfile?deviceId=XXX
+    // Returns weightedGlobalScore, globalScore, rating, rank, tier
+    // Mirrors iOS ScoreManager.fetchPlayerProfile()
+    // ──────────────────────────────────────────────────────────────────────────
+
+    suspend fun fetchPlayerProfile(deviceId: String): PlayerProfileData? =
+        withContext(Dispatchers.IO) {
+            try {
+                val text = get("$BASE/getPlayerProfile?deviceId=${deviceId.ifEmpty { "unknown" }}")
+                Log.d(TAG_HOME, "Profile raw: ${text.take(300)}")
+
+                val json  = JSONObject(text)
+                if (!json.optBoolean("success", false)) return@withContext null
+
+                val stats = json.optJSONObject("stats") ?: return@withContext null
+                PlayerProfileData(
+                    weightedGlobalScore = stats.optInt("weightedGlobalScore", 0),
+                    globalScore         = stats.optInt("globalScore", 0),
+                    rating              = stats.optInt("rating", 0),
+                    rank                = stats.optInt("rank", 0),
+                    tier                = stats.optString("tier", "bronze").ifEmpty { "bronze" }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG_HOME, "fetchPlayerProfile error: ${e.message}")
+                null
+            }
+        }
+
+    // ──────────────────────────────────────────────────────────────────────────
     // HTTP helper
-    // ──────────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────────────────
 
     private fun get(urlStr: String): String {
         val conn = java.net.URL(urlStr).openConnection() as java.net.HttpURLConnection
@@ -144,3 +173,12 @@ class HomeRepository {
         finally { conn.disconnect() }
     }
 }
+
+// Minimal profile data for HomeScreen
+data class PlayerProfileData(
+    val weightedGlobalScore: Int,
+    val globalScore: Int,
+    val rating: Int,
+    val rank: Int,
+    val tier: String
+)

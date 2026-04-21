@@ -22,6 +22,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val nickname  = MutableStateFlow("")
     val avatarUrl = MutableStateFlow("")
 
+    // ── Player Profile (score, rating, rank, tier from /getPlayerProfile) ──
+    val playerProfile   = MutableStateFlow<com.example.brain_land.data.PlayerProfileData?>(null)
+    val isLoadingProfile = MutableStateFlow(true)
+
     // ── Leaderboard ──
     val leaderboard     = MutableStateFlow<LeaderboardResponse?>(null)
     val isLoadingLeader = MutableStateFlow(true)
@@ -31,9 +35,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val suggestedGames     = MutableStateFlow<List<GameType>>(emptyList())
     val isLoadingGames     = MutableStateFlow(true)
 
-    // ── Daily challenge: simple streak & completion state ──
-    val dailyStreak     = MutableStateFlow(0)
-    val completedPuzzles = MutableStateFlow(setOf<Int>()) // indices 1-5
+    // ── Daily challenge ──
+    val dailyStreak      = MutableStateFlow(0)
+    val completedPuzzles = MutableStateFlow(setOf<Int>())
 
     init {
         viewModelScope.launch {
@@ -42,6 +46,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
         fetchLeaderboard()
         fetchGames()
+        fetchProfile()
     }
 
     // ─────────────────────────────────
@@ -54,6 +59,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val deviceId = prefs.deviceId.first()
             leaderboard.value = repo.fetchGlobalLeaderboard(limit = 3, deviceId = deviceId)
             isLoadingLeader.value = false
+        }
+    }
+
+    fun fetchProfile() {
+        viewModelScope.launch {
+            isLoadingProfile.value = true
+            val deviceId = prefs.deviceId.first()
+            if (deviceId.isNotEmpty()) {
+                playerProfile.value = repo.fetchPlayerProfile(deviceId)
+            }
+            isLoadingProfile.value = false
         }
     }
 

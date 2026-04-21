@@ -67,41 +67,78 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
     val avatarUrl by vm.avatarUrl.collectAsState()
     val daily by vm.completedPuzzles.collectAsState()
     val streak by vm.dailyStreak.collectAsState()
+    val playerProfile by vm.playerProfile.collectAsState()
+    val isLoadingProfile by vm.isLoadingProfile.collectAsState()
 
-    var selectedTab by remember { mutableStateOf(HomeTab.HOME) }
+    var selectedTab  by remember { mutableStateOf(HomeTab.HOME) }
+    var activeGame   by remember { mutableStateOf<GameType?>(null) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(BgCard)
     ) {
-        // ── Tab content ──
+        // ── Tab content (always below game overlay) ──
         when (selectedTab) {
             HomeTab.HOME ->
                 HomeTabContent(
-                    nickname       = nickname,
-                    avatarUrl      = avatarUrl,
-                    leaderboard    = leaderboard,
-                    isLoadingLeader = isLoadingLeader,
-                    suggested      = suggested,
+                    nickname         = nickname,
+                    avatarUrl        = avatarUrl,
+                    leaderboard      = leaderboard,
+                    isLoadingLeader  = isLoadingLeader,
+                    playerProfile    = playerProfile,
+                    isLoadingProfile = isLoadingProfile,
+                    suggested        = suggested,
                     completedPuzzles = daily,
-                    streak         = streak,
-                    onTabChange    = { selectedTab = it }
+                    streak           = streak,
+                    onTabChange      = { selectedTab = it }
                 )
             HomeTab.GAMES ->
-                GamesTabContent(suggested = GameType.allTypes())
+                GamesTabContent(
+                    suggested     = GameType.allTypes(),
+                    onSelectGame  = { game -> activeGame = game }
+                )
             HomeTab.LEADERBOARD ->
                 LeaderboardTabContent(leaderboard = leaderboard, isLoading = isLoadingLeader)
             HomeTab.PROFILE ->
                 ProfileTabContent(nickname = nickname, avatarUrl = avatarUrl)
         }
 
-        // ── Custom Tab Bar (pinned to bottom) ──
-        BrainLandTabBar(
-            selectedTab = selectedTab,
-            onTabSelected = { selectedTab = it },
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+        // ── Tab Bar — hidden when a game is active ──
+        if (activeGame == null) {
+            BrainLandTabBar(
+                selectedTab   = selectedTab,
+                onTabSelected = { selectedTab = it },
+                modifier      = Modifier.align(Alignment.BottomCenter)
+            )
+        }
+
+        // ── Game full-screen overlay (covers tab bar + everything) ──
+        if (activeGame == GameType.TILT_MAZE) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF10131B))
+            ) {
+                com.example.brain_land.ui.games.tiltmaze.TiltMazePuzzleView(
+                    onHome           = { activeGame = null },
+                    onNavigateToGame = { targetGame -> activeGame = targetGame }
+                )
+            }
+        }
+
+        if (activeGame == GameType.LIQUID_SORT) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF10131B))
+            ) {
+                com.example.brain_land.ui.games.liquidsort.LiquidSortPuzzleView(
+                    onHome           = { activeGame = null },
+                    onNavigateToGame = { targetGame -> activeGame = targetGame }
+                )
+            }
+        }
     }
 }
 
@@ -115,6 +152,8 @@ private fun HomeTabContent(
     avatarUrl: String,
     leaderboard: LeaderboardResponse?,
     isLoadingLeader: Boolean,
+    playerProfile: com.example.brain_land.data.PlayerProfileData?,
+    isLoadingProfile: Boolean,
     suggested: List<GameType>,
     completedPuzzles: Set<Int>,
     streak: Int,
@@ -144,8 +183,9 @@ private fun HomeTabContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 RatingCard(
-                    leaderboard = leaderboard,
-                    modifier = Modifier.weight(1f)
+                    playerProfile    = playerProfile,
+                    isLoadingProfile = isLoadingProfile,
+                    modifier         = Modifier.weight(1f)
                 )
                 DailyChallengeCard(
                     completedPuzzles = completedPuzzles,
@@ -308,14 +348,16 @@ private fun HomeHeader(nickname: String, avatarUrl: String) {
 
 @Composable
 private fun RatingCard(
-    leaderboard: LeaderboardResponse?,
+    playerProfile: com.example.brain_land.data.PlayerProfileData?,
+    isLoadingProfile: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val myScore = leaderboard?.myScore ?: 0
-    val myRank  = leaderboard?.myRank ?: 0
-    val myTier  = leaderboard?.myTier ?: "bronze"
+    // Prefer weightedGlobalScore (mirrors iOS displayScore)
+    val myScore = playerProfile?.weightedGlobalScore ?: playerProfile?.globalScore ?: 0
+    val myRank  = playerProfile?.rank ?: 0
+    val myTier  = playerProfile?.tier ?: "bronze"
 
-    val (tierEmoji, tierColor) = tierInfo(myScore, myTier)
+    val (tierEmoji, tierClr) = tierInfo(myScore, myTier)
 
     Box(
         modifier = modifier
@@ -329,24 +371,29 @@ private fun RatingCard(
             .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(18.dp))
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(
-                    "Rating",
-                    fontSize = 13.sp,
-                    color = Color.White.copy(alpha = 0.7f)
-                )
+                Text("Rating", fontSize = 13.sp, color = Color.White.copy(alpha = 0.7f))
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "$myScore",
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+
+                if (isLoadingProfile && playerProfile == null) {
+                    // Loading skeleton
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .height(40.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White.copy(0.12f))
+                    )
+                } else {
+                    Text(
+                        text = "$myScore",
+                        fontSize = 36.sp, fontWeight = FontWeight.Bold, color = Color.White
+                    )
+                }
+
                 Spacer(Modifier.height(8.dp))
                 Box(
                     modifier = Modifier
@@ -356,29 +403,16 @@ private fun RatingCard(
                 ) {
                     Text(
                         text = "#${if (myRank > 0) myRank else "-"} Global",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White
                     )
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = tierEmoji,
-                    fontSize = 28.sp
-                )
+                Text(tierEmoji, fontSize = 28.sp)
                 Spacer(Modifier.width(6.dp))
-                Text(
-                    text = myTier.uppercase(),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = tierColor
-                )
-                Text(
-                    text = " League",
-                    fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.5f)
-                )
+                Text(myTier.uppercase(),
+                    fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = tierClr)
+                Text(" League", fontSize = 12.sp, color = Color.White.copy(alpha = 0.5f))
             }
         }
     }
@@ -780,9 +814,12 @@ private fun SectionTitle(title: String) {
 // ──────────────────────────────────────────────────────────────
 
 @Composable
-private fun GamesTabContent(suggested: List<GameType>) {
+private fun GamesTabContent(
+    suggested: List<GameType>,
+    onSelectGame: (GameType) -> Unit
+) {
     GamesScreen(
-        onSelectGame = { /* TODO: navigate to game */ }
+        onSelectGame = { game -> onSelectGame(game) }
     )
 }
 

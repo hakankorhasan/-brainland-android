@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -213,10 +214,13 @@ fun GamesScreen(
                             items(filteredGames) { item ->
                                 val gt = item.resolvedType
                                 if (gt != null) {
+                                    val context = LocalContext.current
+                                    val level   = remember(gt) { readGameLevel(context, gt) }
                                     GameCard(
-                                        game = gt,
+                                        game        = gt,
                                         backendName = item.displayName,
-                                        onClick = { onSelectGame(gt) }
+                                        level       = level,
+                                        onClick     = { onSelectGame(gt) }
                                     )
                                 }
                             }
@@ -542,4 +546,20 @@ private fun GameEmptyState() {
             )
         }
     }
+}
+
+// ──────────────────────────────────────────────────────────
+// Level reader — reads saved level from game-specific SharedPrefs
+// Each game stores its progress under its own prefs name
+// ──────────────────────────────────────────────────────────
+
+private fun readGameLevel(context: android.content.Context, game: GameType): Int {
+    val (prefsName, key) = when (game) {
+        GameType.TILT_MAZE   -> "tiltmaze_prefs"   to "currentLevel"
+        GameType.LIQUID_SORT -> "liquidsort_prefs"  to "currentLevel"
+        else                 -> return 1
+    }
+    return context
+        .getSharedPreferences(prefsName, android.content.Context.MODE_PRIVATE)
+        .getInt(key, 1)
 }
