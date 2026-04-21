@@ -242,6 +242,20 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
             }
         }
 
+        if (activeGame == GameType.GALACTIC_BEACONS) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF0D1017))
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent() } } }
+            ) {
+                com.example.brain_land.ui.games.starbattle.StarBattlePuzzleView(
+                    onHome           = { activeGame = null },
+                    onNavigateToGame = { targetGame -> activeGame = targetGame as? com.example.brain_land.data.GameType }
+                )
+            }
+        }
+
         // ── Refresh data when returning from a game ──
         LaunchedEffect(activeGame) {
             if (activeGame == null) {

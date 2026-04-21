@@ -65,16 +65,18 @@ enum class GameType(val displayName: String, val gameId: String) {
     // Asset drawable resource name — mirrors iOS assetIcon
     // null = fall back to emoji text
     val assetIcon: Int? get() = when (this) {
-        PIPE_CONNECT   -> com.example.brain_land.R.drawable.game_icon_pipe_connect
-        NEURAL_LINK    -> com.example.brain_land.R.drawable.game_icon_neural_link
-        TILT_MAZE      -> com.example.brain_land.R.drawable.game_icon_tilt_maze
-        WORD_PUZZLE    -> com.example.brain_land.R.drawable.game_icon_word_puzzle
-        LIQUID_SORT    -> com.example.brain_land.R.drawable.game_icon_liquid_sort
-        SLITHERLINK    -> com.example.brain_land.R.drawable.game_icon_slitherlink
-        PATH_CLEARING  -> com.example.brain_land.R.drawable.game_icon_path_clearing
-        NONOGRAM       -> com.example.brain_land.R.drawable.game_icon_nonogram
-        BINARY_PUZZLE  -> com.example.brain_land.R.drawable.game_icon_binary
-        else           -> null
+        PIPE_CONNECT     -> com.example.brain_land.R.drawable.game_icon_pipe_connect
+        NEURAL_LINK      -> com.example.brain_land.R.drawable.game_icon_neural_link
+        TILT_MAZE        -> com.example.brain_land.R.drawable.game_icon_tilt_maze
+        WORD_PUZZLE      -> com.example.brain_land.R.drawable.game_icon_word_puzzle
+        LIQUID_SORT      -> com.example.brain_land.R.drawable.game_icon_liquid_sort
+        SLITHERLINK      -> com.example.brain_land.R.drawable.game_icon_slitherlink
+        PATH_CLEARING    -> com.example.brain_land.R.drawable.game_icon_path_clearing
+        NONOGRAM         -> com.example.brain_land.R.drawable.game_icon_nonogram
+        BINARY_PUZZLE    -> com.example.brain_land.R.drawable.game_icon_binary
+        NUMBER_CIRCUIT   -> com.example.brain_land.R.drawable.game_icon_number_circuit
+        GALACTIC_BEACONS -> com.example.brain_land.R.drawable.game_icon_galactic_beacons
+        else             -> null
     }
 
     companion object {
