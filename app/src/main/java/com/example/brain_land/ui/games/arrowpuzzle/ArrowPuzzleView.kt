@@ -170,8 +170,6 @@ class ArrowPuzzleViewModel {
         val rectGrid = PCGrid(grid.cols, grid.rows)
 
         while (true) {
-            delay(slideIntervalMs)
-            
             val currentPathData = exportPathData()
             val mIdx = currentPathData.indexOfFirst { it.id == stream.id }
             if (mIdx == -1) {
@@ -188,36 +186,43 @@ class ArrowPuzzleViewModel {
                 break
             }
 
-            // Slide one cell (state update handled implicitly by view observing stream.cells won't animate smoothly without
-            // finer interpolation in Jetpack Compose, so we instantly snap the logical cells and rely on the View
-            // to render it. True smooth animation requires continuous translation in the View layer).
-            withContext(Dispatchers.Main) {
-                stream.cells = PCEngine.slitherCells(stream.cells, nHead)
-                // Force recomposition
-                streams = streams.toList()
+            // Assign nextHead so the View knows where to extend the line
+            stream.nextHead = nHead
+
+            // Smoothly animate the slither fraction from 0f to 1f over the slide interval
+            val anim = androidx.compose.animation.core.Animatable(0f)
+            anim.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(slideIntervalMs.toInt(), easing = LinearEasing)
+            ) {
+                stream.slitherFraction = this.value
             }
+
+            // Once the slide completes, snap the actual cells array forward
+            stream.cells = PCEngine.slitherCells(stream.cells, nHead)
+            stream.slitherFraction = 0f
+            stream.nextHead = null
+            streams = streams.toList() // Force recomposition
 
             // Exit check
             if (!PCEngine.hasVisibleCells(stream.cells, rectGrid)) {
-                withContext(Dispatchers.Main) {
-                    stream.exited = true
-                    moveCount++
-                    exitedTrails = exitedTrails + TrailDot(originalCells, stream.color)
-                    isAnimating = false
-                    activeStreamId = null
-                    resolveAfterMove()
-                }
+                stream.exited = true
+                moveCount++
+                exitedTrails = exitedTrails + TrailDot(originalCells, stream.color)
+                isAnimating = false
+                activeStreamId = null
+                resolveAfterMove()
                 break
             }
         }
     }
 
     private suspend fun revertAndFinish(stream: PCPathStream, originalCells: List<PCCell>) {
-        withContext(Dispatchers.Main) {
-            stream.cells = originalCells
-            streams = streams.toList()
-            triggerBounce(stream.id)
-        }
+        stream.cells = originalCells
+        stream.slitherFraction = 0f
+        stream.nextHead = null
+        streams = streams.toList()
+        triggerBounce(stream.id)
         delay(500)
         withContext(Dispatchers.Main) {
             isAnimating = false
@@ -260,6 +265,12 @@ fun ArrowPuzzleView(
         targetValue = if (viewModel.blockedStreamId == it.id) 8f else 0f,
         animationSpec = spring(dampingRatio = 0.2f, stiffness = 1500f),
         label = "shake_${it.id}"
+    ).value }
+    
+    val activeScales = viewModel.streams.associate { it.id to animateFloatAsState(
+        targetValue = if (viewModel.activeStreamId == it.id) 1.02f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = 400f),
+        label = "scale_${it.id}"
     ).value }
 
     Box(
@@ -320,17 +331,51 @@ fun ArrowPuzzleView(
                     val isActive = viewModel.activeStreamId == stream.id
                     val isBouncing = viewModel.blockedStreamId == stream.id
                     val shakeX = bounceOffsets[stream.id] ?: 0f
+                    val scale = activeScales[stream.id] ?: 1.0f
 
-                    val scale = if (isActive) 1.02f else 1.0f
                     val lineWidth = maxOf(1.5f, cellSize * 0.12f) * scale
                     val glowWidth = cellSize * (if (isBouncing) 0.28f else 0.22f) * scale
                     val arrowSize = maxOf(5f, cellSize * 0.38f) * scale
 
-                    val points = stream.cells.map { 
-                        Offset(
-                            (it.x * cellSize + cellSize / 2f) + shakeX, 
-                            (it.y * cellSize + cellSize / 2f)
-                        ) 
+                    val streamCells = stream.cells
+                    val nextCell = stream.nextHead
+                    val f = stream.slitherFraction
+
+                    val points = if (nextCell != null && streamCells.isNotEmpty()) {
+                        val pts = mutableListOf<Offset>()
+                        // Tail interpolation
+                        if (streamCells.size > 1) {
+                            val tailCur = streamCells[0]
+                            val tailNext = streamCells[1]
+                            val tailX = tailCur.x + (tailNext.x - tailCur.x) * f
+                            val tailY = tailCur.y + (tailNext.y - tailCur.y) * f
+                            pts.add(Offset(tailX * cellSize + cellSize / 2f + shakeX, tailY * cellSize + cellSize / 2f))
+                        } else {
+                            val tailCur = streamCells[0]
+                            val tailX = tailCur.x + (nextCell.x - tailCur.x) * f
+                            val tailY = tailCur.y + (nextCell.y - tailCur.y) * f
+                            pts.add(Offset(tailX * cellSize + cellSize / 2f + shakeX, tailY * cellSize + cellSize / 2f))
+                        }
+                        
+                        // Intermediate points
+                        for (i in 1 until streamCells.size) {
+                            val it = streamCells[i]
+                            pts.add(Offset(it.x * cellSize + cellSize / 2f + shakeX, it.y * cellSize + cellSize / 2f))
+                        }
+
+                        // Head interpolation
+                        val headCur = streamCells.last()
+                        val headX = headCur.x + (nextCell.x - headCur.x) * f
+                        val headY = headCur.y + (nextCell.y - headCur.y) * f
+                        pts.add(Offset(headX * cellSize + cellSize / 2f + shakeX, headY * cellSize + cellSize / 2f))
+                        pts
+                    } else {
+                        streamCells.map { 
+                            Offset(
+                                (it.x * cellSize + cellSize / 2f) + shakeX, 
+                                (it.y * cellSize + cellSize / 2f)
+                            ) 
+                        }
                     }
 
                     // Pre-build path

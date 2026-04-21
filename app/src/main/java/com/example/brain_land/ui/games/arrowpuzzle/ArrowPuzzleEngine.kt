@@ -1,6 +1,8 @@
 package com.example.brain_land.ui.games.arrowpuzzle
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
@@ -116,12 +118,17 @@ class PCPathStream(
     var cells:  List<PCCell> = initialCells.toList()
     var exited: Boolean = false
 
+    var slitherFraction by androidx.compose.runtime.mutableFloatStateOf(0f)
+    var nextHead: PCCell? by androidx.compose.runtime.mutableStateOf(null)
+
     val head: PCCell get() = cells.last()
     val color: Color get() = neonColor.color
 
     fun reset() {
         cells  = initialCells.toList()
         exited = false
+        slitherFraction = 0f
+        nextHead = null
     }
 }
 
