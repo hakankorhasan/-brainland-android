@@ -31,11 +31,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.brain_land.data.GameType
 import com.example.brain_land.data.LeaderboardPlayer
 import com.example.brain_land.data.LeaderboardResponse
+import com.example.brain_land.ui.games.slitherlink.SlitherlinkPuzzleView
 import com.example.brain_land.ui.theme.*
 import com.example.brain_land.viewmodel.HomeViewModel
 
@@ -91,6 +94,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                     suggested        = suggested,
                     completedPuzzles = daily,
                     streak           = streak,
+                    onPlayGame       = { game -> activeGame = game },
                     onTabChange      = { selectedTab = it }
                 )
             HomeTab.GAMES ->
@@ -119,6 +123,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color(0xFF10131B))
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent() } } }
             ) {
                 com.example.brain_land.ui.games.tiltmaze.TiltMazePuzzleView(
                     onHome           = { activeGame = null },
@@ -132,6 +137,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color(0xFF10131B))
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent() } } }
             ) {
                 com.example.brain_land.ui.games.liquidsort.LiquidSortPuzzleView(
                     onHome           = { activeGame = null },
@@ -145,6 +151,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color(0xFF10131B))
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent() } } }
             ) {
                 com.example.brain_land.ui.games.arrowpuzzle.ArrowPuzzlePuzzleView(
                     onHome           = { activeGame = null },
@@ -158,6 +165,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color(0xFF10131B))
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent() } } }
             ) {
                 com.example.brain_land.ui.games.wordpuzzle.WordPuzzlePuzzleView(
                     onHome           = { activeGame = null },
@@ -171,6 +179,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color(0xFF10131B))
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent() } } }
             ) {
                 com.example.brain_land.ui.games.pipeconnect.PipeConnectPuzzleView(
                     onHome           = { activeGame = null },
@@ -184,6 +193,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color(0xFF10131B))
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent() } } }
             ) {
                 com.example.brain_land.ui.games.nonogram.NonogramPuzzleView(
                     onHome           = { activeGame = null },
@@ -192,16 +202,29 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
             }
         }
 
-        if (activeGame == GameType.NEURAL_LINK) {
+        if (activeGame == GameType.NEURAL_LINK || activeGame == GameType.NUMBER_CIRCUIT) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color(0xFF080A10))
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent() } } }
             ) {
                 com.example.brain_land.ui.games.neurallink.NeuralLinkPuzzleView(
                     onHome           = { activeGame = null },
                     onNavigateToGame = { targetGame -> activeGame = targetGame }
                 )
+            }
+        }
+
+        if (activeGame == GameType.SLITHERLINK) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF0A0D14))
+                    .systemBarsPadding()
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent() } } }
+            ) {
+                SlitherlinkPuzzleView(onHome = { activeGame = null })
             }
         }
 
@@ -230,6 +253,7 @@ private fun HomeTabContent(
     suggested: List<GameType>,
     completedPuzzles: Set<Int>,
     streak: Int,
+    onPlayGame: (GameType) -> Unit,
     onTabChange: (HomeTab) -> Unit
 ) {
     val bgColor = BgCard
@@ -293,7 +317,7 @@ private fun HomeTabContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(suggested) { game ->
-                    HomeGameCard(game = game)
+                    HomeGameCard(game = game, onClick = { onPlayGame(game) })
                 }
             }
 
@@ -588,7 +612,7 @@ private fun DailyChallengeCard(
 // ──────────────────────────────────────────────────────────────
 
 @Composable
-private fun HomeGameCard(game: GameType) {
+private fun HomeGameCard(game: GameType, onClick: () -> Unit = {}) {
     val cardColor = hexToColor(game.cardColorHex)
     val fg = if (game.isLightCard) Color.Black.copy(alpha = 0.8f) else Color.White.copy(alpha = 0.9f)
 
@@ -615,7 +639,10 @@ private fun HomeGameCard(game: GameType) {
                 ),
                 RoundedCornerShape(14.dp)
             )
-            .clickable { pressed = !pressed }
+            .clickable { 
+                pressed = !pressed
+                onClick()
+            }
     ) {
         // Icon area
         Box(
