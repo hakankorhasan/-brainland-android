@@ -6,7 +6,7 @@ enum class GameType(val displayName: String, val gameId: String) {
     LASER_PUZZLE("Laser Puzzle", "laserPuzzle"),
     HIDDEN_PAIR("Hidden Pair", "hiddenPair"),
     BINARY_PUZZLE("Binary Puzzle", "binaryPuzzle"),
-    NONOGRAM("Pixel Excavation", "nonogram"),
+    NONOGRAM("Nonogram", "nonogram"),
     SLITHERLINK("Slitherlink", "slitherlink"),
     BLOCK_FIT("Block Fit", "blockFit"),
     CRYPTO_CAGE("Crypto-Cage", "cryptoCage"),
@@ -14,7 +14,7 @@ enum class GameType(val displayName: String, val gameId: String) {
     GALACTIC_BEACONS("Galactic Beacons", "galacticBeacons"),
     NUMBER_CIRCUIT("Number Circuit", "numberCircuit"),
     WORD_PUZZLE("Word Puzzle", "wordPuzzle"),
-    PATH_CLEARING("Path Clearing", "pathClearing"),
+    PATH_CLEARING("Arrow Puzzle", "pathClearing"),
     LIQUID_SORT("Liquid Sort", "liquidSort"),
     TILT_MAZE("Tilt Maze", "tiltMaze");
 

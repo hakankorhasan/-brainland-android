@@ -47,7 +47,7 @@ class ArrowPuzzleViewModel {
     var blockedStreamId by mutableStateOf<String?>(null)
     var isAnimating     by mutableStateOf(false)
     
-    private val slideIntervalMs = 45L
+    private val slideIntervalMs = 25L
 
     fun resetLevel() {
         streams.forEach { it.reset() }

@@ -116,7 +116,7 @@ class HomeRepository {
 
     // Mirror iOS local-only games (not yet on backend)
     private fun localOnlyFallback(): List<GameItem> = listOf(
-        GameItem(id = "pathClearing", name = "Path Clearing", gameType = ".pathClearing", order = 98),
+        GameItem(id = "pathClearing", name = "Arrow Puzzle", gameType = ".pathClearing", order = 98),
         GameItem(id = "liquidSort",   name = "Liquid Sort",   gameType = ".liquidSort",   order = 99)
     )
 

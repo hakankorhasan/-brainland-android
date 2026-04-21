@@ -99,6 +99,7 @@ fun TiltMazePuzzleView(
         // iOS-style result sheet (Dialog — covers navbar)
         GameResultSheet(
             visible          = showWin,
+            gameId           = "tiltMaze",
             level            = currentLevel,
             elapsed          = lastElapsed,
             difficulty       = tiltMazeDifficulty(tiltMazeSizeForLevel(currentLevel)),

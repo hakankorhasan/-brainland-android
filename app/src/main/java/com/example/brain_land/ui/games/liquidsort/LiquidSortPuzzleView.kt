@@ -100,6 +100,7 @@ fun LiquidSortPuzzleView(
         if (showWin) {
             com.example.brain_land.ui.games.tiltmaze.GameResultSheet(
                 visible    = true,
+                gameId     = "liquidSort",
                 level      = engine.levelNumber,
                 elapsed    = lastElapsed,
                 difficulty = LiquidSortGenerator.difficultyLevel(engine.levelNumber),

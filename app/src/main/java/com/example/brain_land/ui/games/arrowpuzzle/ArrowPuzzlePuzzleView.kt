@@ -88,7 +88,7 @@ fun ArrowPuzzlePuzzleView(
             .systemBarsPadding()
     ) {
         GameShellView(
-            title      = "Path Clearing",
+            title      = "Arrow Puzzle",
             level      = currentLevel,
             timerSecs  = timerSecs,
             onBack     = onHome,
@@ -116,6 +116,7 @@ fun ArrowPuzzlePuzzleView(
         // Win result
         GameResultSheet(
             visible          = showWin,
+            gameId           = "arrowPuzzle",
             level            = currentLevel,
             elapsed          = timerSecs,
             difficulty       = minOf(currentLevel, 10), // Base difficulty mapping

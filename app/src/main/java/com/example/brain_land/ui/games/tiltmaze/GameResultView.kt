@@ -94,6 +94,7 @@ private fun randomSuggestions(excludingId: String = "tiltMaze", count: Int = 2):
 @Composable
 fun GameResultSheet(
     visible:           Boolean,
+    gameId:            String,
     level:             Int,
     elapsed:           Int,
     difficulty:        Int,
@@ -113,6 +114,7 @@ fun GameResultSheet(
         )
     ) {
         GameResultContent(
+            gameId           = gameId,
             level            = level,
             elapsed          = elapsed,
             difficulty       = difficulty,
@@ -131,6 +133,7 @@ fun GameResultSheet(
 
 @Composable
 private fun GameResultContent(
+    gameId:           String,
     level:            Int,
     elapsed:          Int,
     difficulty:       Int,
@@ -149,18 +152,18 @@ private fun GameResultContent(
     var showContent    by remember { mutableStateOf(false) }
 
     // Stable suggestions — mirrors iOS suggestedGames (computed once on appear)
-    val suggestions = remember { randomSuggestions(excludingId = "tiltMaze", count = 2) }
+    val suggestions = remember { randomSuggestions(excludingId = gameId, count = 2) }
 
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(80)
         showContent = true
         scope.launch {
             resultResponse = repo.submitGameResult(
-                gameId       = "tiltMaze",
+                gameId       = gameId,
                 level        = level,
                 difficulty   = difficulty,
                 correct      = true,
-                responseTime = elapsed.toDouble()
+                responseTime = maxOf(1.0, elapsed.toDouble())
             )
             apiCompleted = true
         }

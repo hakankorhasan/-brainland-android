@@ -165,6 +165,53 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 )
             }
         }
+
+        if (activeGame == GameType.PIPE_CONNECT) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF10131B))
+            ) {
+                com.example.brain_land.ui.games.pipeconnect.PipeConnectPuzzleView(
+                    onHome           = { activeGame = null },
+                    onNavigateToGame = { targetGame -> activeGame = targetGame }
+                )
+            }
+        }
+
+        if (activeGame == GameType.NONOGRAM) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF10131B))
+            ) {
+                com.example.brain_land.ui.games.nonogram.NonogramPuzzleView(
+                    onHome           = { activeGame = null },
+                    onNavigateToGame = { targetGame -> activeGame = targetGame }
+                )
+            }
+        }
+
+        if (activeGame == GameType.NEURAL_LINK) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF080A10))
+            ) {
+                com.example.brain_land.ui.games.neurallink.NeuralLinkPuzzleView(
+                    onHome           = { activeGame = null },
+                    onNavigateToGame = { targetGame -> activeGame = targetGame }
+                )
+            }
+        }
+
+        // ── Refresh data when returning from a game ──
+        LaunchedEffect(activeGame) {
+            if (activeGame == null) {
+                vm.fetchProfile()
+                vm.fetchLeaderboard()
+            }
+        }
     }
 }
 
