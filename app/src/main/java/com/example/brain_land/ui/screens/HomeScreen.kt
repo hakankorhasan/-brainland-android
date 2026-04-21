@@ -139,6 +139,19 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 )
             }
         }
+
+        if (activeGame == GameType.WORD_PUZZLE) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF10131B))
+            ) {
+                com.example.brain_land.ui.games.wordpuzzle.WordPuzzlePuzzleView(
+                    onHome           = { activeGame = null },
+                    onNavigateToGame = { targetGame -> activeGame = targetGame }
+                )
+            }
+        }
     }
 }
 
