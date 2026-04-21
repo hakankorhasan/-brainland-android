@@ -53,20 +53,49 @@ fun WordPuzzlePuzzleView(
     val scope   = rememberCoroutineScope()
     val level   = remember { WordPuzzleLocalEngine.persistedCurrentLevel(context) }
     val state   = remember { WPGameState(context, scope, level) }
+    var showExitDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { state.loadLevel(); state.startTimerIfNeeded() }
 
+    // Intercept Android back gesture — don't close while game is active
+    androidx.activity.compose.BackHandler(enabled = !state.showResult) {
+        showExitDialog = true
+    }
+
+    // Full-screen Box — covers nav bar area so no touches fall through
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(BgDark)
-            .systemBarsPadding()
+            // NOT systemBarsPadding here — moved to inner Column
+            .clickable(enabled = false, onClick = {}) // absorb stray taps on background
     ) {
         WordPuzzleGameView(
-            state  = state,
-            onBack = onHome,
+            state            = state,
+            onBack           = { showExitDialog = true },   // top bar back → dialog
             onNavigateToGame = onNavigateToGame
         )
+
+        // Exit confirmation dialog
+        if (showExitDialog) {
+            AlertDialog(
+                onDismissRequest = { showExitDialog = false },
+                title            = { Text("Leave Game?", color = Color.White, fontWeight = FontWeight.Bold) },
+                text             = { Text("Your progress will be lost if you leave now.", color = Color.White.copy(0.7f)) },
+                confirmButton    = {
+                    TextButton(onClick = { showExitDialog = false; onHome() }) {
+                        Text("Leave", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton    = {
+                    TextButton(onClick = { showExitDialog = false }) {
+                        Text("Stay", color = Color(0xFF2DEB6A), fontWeight = FontWeight.Bold)
+                    }
+                },
+                containerColor   = Color(0xFF1D1B29),
+                shape            = RoundedCornerShape(20.dp)
+            )
+        }
     }
 }
 
@@ -84,7 +113,9 @@ private fun WordPuzzleGameView(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding(),   // inset content from status + nav bars
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // ── Top bar ──────────────────────────────────────────────────────
