@@ -72,16 +72,64 @@ fun LaserPuzzleView(onHome: () -> Unit) {
     LaunchedEffect(gs.isGameOver) { if (gs.isGameOver) showGameOver = true }
 
     Box(
-        modifier = Modifier.fillMaxSize().background(bgDeep)
+        modifier = Modifier.fillMaxSize().background(bgDeep).systemBarsPadding()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
             // ── Top bar ──
-            LPTopBar(
-                levelNumber = gs.levelNumber,
-                onBack      = onHome,
-                onInfo      = {}
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp)
+            ) {
+                IconButton(
+                    onClick  = onHome,
+                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 4.dp)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White.copy(0.80f)
+                    )
+                }
+                Text(
+                    "Laser Puzzle",
+                    fontSize   = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = Color.White,
+                    modifier   = Modifier.align(Alignment.Center)
+                )
+                IconButton(
+                    onClick  = { /* info */ },
+                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = "Info",
+                        tint = Color.White.copy(0.45f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+
+            // ── Level badge ──
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text(
+                    "LEVEL ${gs.levelNumber}",
+                    fontSize      = 12.sp,
+                    fontWeight    = FontWeight.Bold,
+                    color         = redLaser,
+                    letterSpacing = 0.5.sp,
+                    modifier      = Modifier
+                        .background(redLaser.copy(0.10f), CircleShape)
+                        .border(0.5.dp, redLaser.copy(0.20f), CircleShape)
+                        .padding(horizontal = 14.dp, vertical = 5.dp)
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
 
             // ── Stats ──
             LPStatsBar(timerSecs = timerSecs, moves = gs.moveCount)
@@ -100,12 +148,7 @@ fun LaserPuzzleView(onHome: () -> Unit) {
                 )
             }
 
-            Spacer(Modifier.height(12.dp))
-
-            // ── Lives ──
-            LivesRow(lives = gs.lives)
-
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(24.dp))
 
             // ── Fire Button ──
             Box(
@@ -166,57 +209,7 @@ fun LaserPuzzleView(onHome: () -> Unit) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Top Bar
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun LPTopBar(levelNumber: Int, onBack: () -> Unit, onInfo: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
-            Icon(
-                imageVector        = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
-                tint               = Color.White
-            )
-        }
-
-        Column(
-            modifier            = Modifier.align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text       = "Laser Puzzle",
-                style      = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color      = Color.White
-            )
-            Spacer(Modifier.height(4.dp))
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = Color(0xFF4B3BAF)
-            ) {
-                Text(
-                    text     = "LEVEL $levelNumber",
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 3.dp),
-                    style    = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color    = Color.White,
-                    letterSpacing = 1.2.sp
-                )
-            }
-        }
-
-        IconButton(onClick = onInfo, modifier = Modifier.align(Alignment.CenterEnd)) {
-            Icon(Icons.Filled.Info, contentDescription = "Info", tint = Color.White.copy(0.7f))
-        }
-    }
-}
-
+// LPTopBar removed as it has been inlined with standard GameShell top bar layout
 // ─────────────────────────────────────────────────────────────────────────────
 // Stats Bar
 // ─────────────────────────────────────────────────────────────────────────────
@@ -233,7 +226,7 @@ private fun LPStatsBar(timerSecs: Int, moves: Int) {
             .padding(horizontal = 16.dp)
             .background(Color.White.copy(0.05f), RoundedCornerShape(12.dp))
             .padding(vertical = 12.dp, horizontal = 20.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         // Time
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -932,9 +925,11 @@ private fun LivesRow(lives: Int) {
 
 @Composable
 private fun FireButton(enabled: Boolean, onClick: () -> Unit) {
+    val fireColor = Color(0xFFE8845C) // Match iOS neon hint/fire color
+
     val pulseAnim = rememberInfiniteTransition(label = "fire")
     val glow by pulseAnim.animateFloat(
-        initialValue  = 0.7f, targetValue = 1f,
+        initialValue  = 0.3f, targetValue = 0.6f,
         animationSpec = if (enabled)
             infiniteRepeatable(tween(900), RepeatMode.Reverse)
         else
@@ -945,30 +940,28 @@ private fun FireButton(enabled: Boolean, onClick: () -> Unit) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(
-                Brush.linearGradient(
-                    if (enabled)
-                        listOf(Color(0xFFCC4400), Color(0xFFFF6600))
-                    else
-                        listOf(Color.Gray.copy(0.3f), Color.Gray.copy(0.2f))
-                )
-            )
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (enabled) fireColor.copy(alpha = 0.12f) else Color.White.copy(0.05f))
             .border(
-                1.5.dp,
-                if (enabled) Color(0xFFFF9933).copy(glow) else Color.White.copy(0.08f),
-                RoundedCornerShape(50)
+                1.dp,
+                if (enabled) fireColor.copy(alpha = glow) else Color.White.copy(0.1f),
+                RoundedCornerShape(12.dp)
             )
             .clickable(enabled = enabled) { onClick() }
-            .padding(horizontal = 36.dp, vertical = 13.dp)
+            .padding(horizontal = 18.dp, vertical = 8.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(Icons.Filled.Bolt, null, tint = Color.White, modifier = Modifier.size(18.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            Icon(
+                Icons.Filled.Bolt, 
+                contentDescription = null, 
+                tint = if (enabled) fireColor else Color.White.copy(0.3f), 
+                modifier = Modifier.size(16.dp)
+            )
             Text(
                 text       = "Fire",
-                color      = Color.White,
-                fontWeight = FontWeight.Bold,
-                style      = MaterialTheme.typography.bodyLarge
+                color      = if (enabled) fireColor else Color.White.copy(0.3f),
+                fontWeight = FontWeight.SemiBold,
+                fontSize   = 13.sp
             )
         }
     }

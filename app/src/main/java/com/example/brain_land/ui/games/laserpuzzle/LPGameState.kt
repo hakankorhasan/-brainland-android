@@ -40,7 +40,7 @@ class LPGameState(
     private var timerSecs by mutableIntStateOf(0)
     var elapsedSeconds: Int get() = timerSecs; set(v) { timerSecs = v }
 
-    init { loadLevel(1) }
+    // Level is loaded explicitly by LaserPuzzleView with the correct saved level number
 
     // ── Level Loading ─────────────────────────────────────────────────────────
 

@@ -147,24 +147,27 @@ private fun NeuralLinkGameContent(
                 fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White,
                 modifier = Modifier.align(Alignment.Center)
             )
-            Row(modifier = Modifier.align(Alignment.CenterEnd)) {
-                IconButton(onClick = onUndo, enabled = engine.canUndo) {
-                    Icon(Icons.AutoMirrored.Filled.Undo, "Undo",
-                        tint = if (engine.canUndo) Color(0xFF00E5FF) else Color.White.copy(0.3f))
-                }
-                IconButton(onClick = onReset) {
-                    Icon(Icons.Default.Refresh, "Reset", tint = Color.White.copy(0.5f))
-                }
+            IconButton(onClick = { /* Info */ }, modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp)) {
+                Icon(Icons.Default.Info, "Info", tint = Color.White.copy(0.45f), modifier = Modifier.size(20.dp))
             }
         }
 
+        Spacer(Modifier.height(6.dp))
+
         // ── Level badge
         Text(
-            "Level ${engine.levelNumber}  ·  ${engine.gridSize}×${engine.gridSize}  ·  ${engine.flowCount} flows",
-            fontSize = 11.sp, color = Color.White.copy(0.4f), fontFamily = FontFamily.Monospace
+            "LEVEL ${engine.levelNumber}",
+            fontSize      = 12.sp,
+            fontWeight    = FontWeight.Bold,
+            color         = Color(0xFF00E5FF),
+            letterSpacing = 0.5.sp,
+            modifier      = Modifier
+                .background(Color(0xFF00E5FF).copy(0.10f), CircleShape)
+                .border(0.5.dp, Color(0xFF00E5FF).copy(0.20f), CircleShape)
+                .padding(horizontal = 14.dp, vertical = 5.dp)
         )
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
 
         // ── Stat bar
         NeuralStatBar(engine = engine, timerSecs = timerSecs)
@@ -180,6 +183,24 @@ private fun NeuralLinkGameContent(
             contentAlignment = Alignment.Center
         ) {
             NeuralLinkGrid(engine = engine, neuralActivation = neuralActivation)
+        }
+        
+        Spacer(Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.padding(vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            TextButton(onClick = onUndo, enabled = engine.canUndo) {
+                Icon(Icons.AutoMirrored.Filled.Undo, null, tint = if (engine.canUndo) Color(0xFF00E5FF) else Color.White.copy(0.3f), modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Undo", color = if (engine.canUndo) Color(0xFF00E5FF) else Color.White.copy(0.3f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            }
+            TextButton(onClick = onReset) {
+                Icon(Icons.Default.Refresh, null, tint = Color.White.copy(0.5f), modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Restart", color = Color.White.copy(0.7f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
 
         Spacer(Modifier.height(8.dp))

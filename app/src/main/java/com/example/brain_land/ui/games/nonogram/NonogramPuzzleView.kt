@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -148,23 +149,32 @@ private fun NonogramGameContent(
                 fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White,
                 modifier = Modifier.align(Alignment.Center)
             )
-            IconButton(onClick = onRestart, modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp)) {
-                Icon(Icons.Default.Refresh, "Reset", tint = Color.White.copy(0.5f))
+            IconButton(onClick = { /* info panel placeholder */ }, modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp)) {
+                Icon(Icons.Default.Info, "Info", tint = Color.White.copy(0.45f), modifier = Modifier.size(20.dp))
             }
         }
 
+        Spacer(Modifier.height(6.dp))
+
         // ── Level badge
         Text(
-            "Level ${engine.levelNumber}  ·  ${engine.gridSize}×${engine.gridSize}",
-            fontSize = 11.sp, color = Color.White.copy(0.4f), fontFamily = FontFamily.Monospace
+            "LEVEL ${engine.levelNumber}  ·  ${engine.gridSize}×${engine.gridSize}",
+            fontSize      = 12.sp,
+            fontWeight    = FontWeight.Bold,
+            color         = ExcavationColors.accent,
+            letterSpacing = 0.5.sp,
+            modifier      = Modifier
+                .background(ExcavationColors.accent.copy(0.10f), CircleShape)
+                .border(0.5.dp, ExcavationColors.accent.copy(0.20f), CircleShape)
+                .padding(horizontal = 14.dp, vertical = 5.dp)
         )
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
 
         // ── Info panel
         LevelInfoPanel(engine = engine, timerSecs = timerSecs)
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
 
         // ── Grid fills the remaining space
         Box(
@@ -177,11 +187,21 @@ private fun NonogramGameContent(
             NonogramGrid(engine = engine, hintedCell = hintedCell)
         }
 
-        // ── Hint button
-        TextButton(onClick = onHint, modifier = Modifier.padding(vertical = 6.dp)) {
-            Icon(Icons.Default.Lightbulb, null, tint = ExcavationColors.accent, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Hint", color = ExcavationColors.accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        // ── Hint & Restart buttons
+        Row(
+            modifier = Modifier.padding(vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            TextButton(onClick = onRestart) {
+                Icon(Icons.Default.Refresh, null, tint = Color.White.copy(0.5f), modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Restart", color = Color.White.copy(0.7f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            }
+            TextButton(onClick = onHint) {
+                Icon(Icons.Default.Lightbulb, null, tint = ExcavationColors.accent, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Hint", color = ExcavationColors.accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }

@@ -151,28 +151,57 @@ private fun SBGameView(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // ── Top bar ──────────────────────────────────────────────────────────
-        Box(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, start = 4.dp, end = 16.dp)) {
-            IconButton(onClick = onHome, modifier = Modifier.align(Alignment.CenterStart)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White.copy(0.8f))
-            }
-            Text("Star Battle", fontSize = 17.sp, fontWeight = FontWeight.Bold,
-                color = Color.White, modifier = Modifier.align(Alignment.Center))
-            IconButton(onClick = { showInfo = true }, modifier = Modifier.align(Alignment.CenterEnd)) {
-                Icon(Icons.Default.Info, null, tint = Color.White.copy(0.5f))
-            }
-        }
-
-        // ── Level pill ───────────────────────────────────────────────────────
         Box(
             modifier = Modifier
-                .background(levelPill.copy(0.85f), RoundedCornerShape(50))
-                .padding(horizontal = 18.dp, vertical = 5.dp)
+                .fillMaxWidth()
+                .padding(top = 4.dp)
         ) {
-            Text("LEVEL ${level.levelNumber}", fontSize = 12.sp,
-                fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 1.sp)
+            IconButton(
+                onClick  = onHome,
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = 4.dp)
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White.copy(0.80f)
+                )
+            }
+            Text(
+                "Star Battle",
+                fontSize   = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color      = Color.White,
+                modifier   = Modifier.align(Alignment.Center)
+            )
+            IconButton(
+                onClick  = { showInfo = true },
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp)
+            ) {
+                Icon(
+                    Icons.Default.Info,
+                    contentDescription = "Info",
+                    tint = Color.White.copy(0.45f),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(6.dp))
+
+        // ── Level badge ──
+        Text(
+            "LEVEL ${level.levelNumber}",
+            fontSize      = 12.sp,
+            fontWeight    = FontWeight.Bold,
+            color         = accentPurp,
+            letterSpacing = 0.5.sp,
+            modifier      = Modifier
+                .background(accentPurp.copy(0.10f), CircleShape)
+                .border(0.5.dp, accentPurp.copy(0.20f), CircleShape)
+                .padding(horizontal = 14.dp, vertical = 5.dp)
+        )
+
+        Spacer(Modifier.height(12.dp))
 
         // ── Stats card ───────────────────────────────────────────────────────
         val timeStr = "%d:%02d".format(timerSecs / 60, timerSecs % 60)

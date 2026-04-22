@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.*
@@ -277,13 +278,24 @@ private fun PipeConnectHeader(level: Int, timerSecs: Int, moves: Int, onBack: ()
                 onClick = onBack,
                 modifier = Modifier.align(Alignment.CenterStart).padding(start = 4.dp)
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White.copy(0.8f))
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White.copy(0.80f))
             }
             Text(
                 "Pipe Connect",
                 fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White,
                 modifier = Modifier.align(Alignment.Center)
             )
+            IconButton(
+                onClick  = { /* info sheet */ },
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp)
+            ) {
+                Icon(
+                    Icons.Default.Info,
+                    contentDescription = "Info",
+                    tint = Color.White.copy(0.45f),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
 
         Spacer(Modifier.height(6.dp))
@@ -299,7 +311,7 @@ private fun PipeConnectHeader(level: Int, timerSecs: Int, moves: Int, onBack: ()
                 .padding(horizontal = 14.dp, vertical = 5.dp)
         )
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(12.dp))
 
         // Stats row (TIME | MOVES) — same card style as iOS
         Row(

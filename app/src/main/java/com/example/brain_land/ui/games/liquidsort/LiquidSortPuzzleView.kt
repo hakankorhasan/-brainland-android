@@ -149,52 +149,33 @@ private fun LiquidSortShell(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(top = 4.dp)
         ) {
             // Back button
             IconButton(
                 onClick  = onBack,
-                modifier = Modifier.align(Alignment.CenterStart)
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = 4.dp)
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = Color.White.copy(0.85f)
+                    tint = Color.White.copy(0.80f)
                 )
             }
 
-            // Title + level badge
-            Column(
-                modifier             = Modifier.align(Alignment.Center),
-                horizontalAlignment  = Alignment.CenterHorizontally,
-                verticalArrangement  = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    "Liquid Sort",
-                    fontSize   = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color      = Color.White
-                )
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(AccPurple.copy(0.18f))
-                        .border(1.dp, AccPurple.copy(0.35f), CircleShape)
-                        .padding(horizontal = 10.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        "LEVEL ${engine.levelNumber}",
-                        fontSize   = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = AccPurple
-                    )
-                }
-            }
+            // Title
+            Text(
+                "Liquid Sort",
+                fontSize   = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color      = Color.White,
+                modifier   = Modifier.align(Alignment.Center)
+            )
 
             // Info button (right) — mirrors iOS info icon
             IconButton(
                 onClick  = { /* info sheet */ },
-                modifier = Modifier.align(Alignment.CenterEnd)
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp)
             ) {
                 Icon(
                     Icons.Default.Info,
@@ -204,6 +185,23 @@ private fun LiquidSortShell(
                 )
             }
         }
+
+        Spacer(Modifier.height(6.dp))
+
+        // ── Level badge ──
+        Text(
+            "LEVEL ${engine.levelNumber}",
+            fontSize      = 12.sp,
+            fontWeight    = FontWeight.Bold,
+            color         = AccPurple,
+            letterSpacing = 0.5.sp,
+            modifier      = Modifier
+                .background(AccPurple.copy(0.10f), CircleShape)
+                .border(0.5.dp, AccPurple.copy(0.20f), CircleShape)
+                .padding(horizontal = 14.dp, vertical = 5.dp)
+        )
+
+        Spacer(Modifier.height(12.dp))
 
         // ── TIME | MOVES glass card ──────────────────────────────────────────
         Row(

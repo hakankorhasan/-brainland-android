@@ -83,35 +83,54 @@ fun NumberCircuitPuzzleView(onHome: () -> Unit, onNavigateToGame: (Any) -> Unit 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 4.dp, start = 4.dp, end = 16.dp)
+                    .padding(top = 4.dp)
             ) {
-                IconButton(onClick = onHome, modifier = Modifier.align(Alignment.CenterStart)) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White.copy(0.8f))
+                IconButton(
+                    onClick  = onHome,
+                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 4.dp)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White.copy(0.80f)
+                    )
                 }
                 Text(
                     "Math Matrix",
-                    fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White,
-                    modifier = Modifier.align(Alignment.Center)
+                    fontSize   = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = Color.White,
+                    modifier   = Modifier.align(Alignment.Center)
                 )
-                IconButton(onClick = { showInfo = true }, modifier = Modifier.align(Alignment.CenterEnd)) {
-                    Icon(Icons.Default.Info, null, tint = Color.White.copy(0.5f))
+                IconButton(
+                    onClick  = { showInfo = true },
+                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = "Info",
+                        tint = Color.White.copy(0.45f),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 
-            // ── Level pill ───────────────────────────────────────────────────
-            Box(
-                modifier = Modifier
-                    .background(levelPill.copy(0.85f), RoundedCornerShape(50))
-                    .padding(horizontal = 18.dp, vertical = 5.dp)
-            ) {
-                Text(
-                    "LEVEL ${gs.levelNumber}",
-                    fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                    color = Color.White, letterSpacing = 1.sp
-                )
-            }
+            Spacer(Modifier.height(6.dp))
 
-            Spacer(Modifier.height(10.dp))
+            // ── Level badge ──
+            Text(
+                "LEVEL ${gs.levelNumber}",
+                fontSize      = 12.sp,
+                fontWeight    = FontWeight.Bold,
+                color         = accentPurple,
+                letterSpacing = 0.5.sp,
+                modifier      = Modifier
+                    .background(accentPurple.copy(0.10f), CircleShape)
+                    .border(0.5.dp, accentPurple.copy(0.20f), CircleShape)
+                    .padding(horizontal = 14.dp, vertical = 5.dp)
+            )
+
+            Spacer(Modifier.height(12.dp))
 
             // ── Stats card ───────────────────────────────────────────────────
             val timeStr = "%d:%02d".format(timerSecs / 60, timerSecs % 60)
