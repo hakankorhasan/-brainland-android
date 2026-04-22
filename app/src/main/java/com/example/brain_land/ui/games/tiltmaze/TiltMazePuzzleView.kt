@@ -181,25 +181,12 @@ fun GameShellView(
 
         Spacer(Modifier.height(12.dp))
 
-        // ── Board with glow border ──
+        // ── Board ──
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
                 .padding(horizontal = 12.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(Color.White.copy(0.02f))
-                .border(
-                    width = 1.2.dp,
-                    brush = Brush.linearGradient(
-                        listOf(
-                            AccentCyan.copy(0.35f),
-                            AccentPurp.copy(0.20f),
-                            AccentCyan.copy(0.15f)
-                        )
-                    ),
-                    shape = RoundedCornerShape(4.dp)
-                )
         ) {
             content()
         }

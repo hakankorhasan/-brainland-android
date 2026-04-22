@@ -1108,11 +1108,11 @@ fun hexToColor(hex: String): Color {
 private fun tierInfo(score: Int, tier: String): Pair<String, Color> {
     val t = tier.lowercase()
     return when {
-        t == "legend"   || score >= 15000 -> "👑" to Color(0xFFFFD700)
-        t == "diamond"  || score >= 10000 -> "💎" to Color(0xFF00D4FF)
-        t == "platinum" || score >= 6000  -> "⚡" to Color(0xFFE5E4E2)
-        t == "gold"     || score >= 3000  -> "🔱" to Color(0xFFFFAA00)
-        t == "silver"   || score >= 1000  -> "🌙" to Color(0xFFC0C0C0)
+        t == "legend"   || score >= 500000 -> "👑" to Color(0xFFFFD700)
+        t == "diamond"  || score >= 300000 -> "💎" to Color(0xFF00D4FF)
+        t == "platinum" || score >= 150000  -> "⚡" to Color(0xFFE5E4E2)
+        t == "gold"     || score >= 50000  -> "🔱" to Color(0xFFFFAA00)
+        t == "silver"   || score >= 15000  -> "🌙" to Color(0xFFC0C0C0)
         else                              -> "🛡️" to Color(0xFFCD7F32)
     }
 }
