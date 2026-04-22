@@ -76,6 +76,7 @@ enum class GameType(val displayName: String, val gameId: String) {
         BINARY_PUZZLE    -> com.example.brain_land.R.drawable.game_icon_binary
         NUMBER_CIRCUIT   -> com.example.brain_land.R.drawable.game_icon_number_circuit
         GALACTIC_BEACONS -> com.example.brain_land.R.drawable.game_icon_galactic_beacons
+        BLOCK_FIT        -> com.example.brain_land.R.drawable.game_icon_block_fit
         else             -> null
     }
 

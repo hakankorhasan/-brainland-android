@@ -256,6 +256,33 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
             }
         }
 
+        if (activeGame == GameType.BLOCK_FIT) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF0D1017))
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent() } } }
+            ) {
+                com.example.brain_land.ui.games.blockfit.BlockFitPuzzleView(
+                    onHome           = { activeGame = null },
+                    onNavigateToGame = { targetGame -> activeGame = targetGame as? com.example.brain_land.data.GameType }
+                )
+            }
+        }
+
+        if (activeGame == GameType.LASER_PUZZLE) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF0D1017))
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent() } } }
+            ) {
+                com.example.brain_land.ui.games.laserpuzzle.LaserPuzzleView(
+                    onHome = { activeGame = null }
+                )
+            }
+        }
+
         // ── Refresh data when returning from a game ──
         LaunchedEffect(activeGame) {
             if (activeGame == null) {

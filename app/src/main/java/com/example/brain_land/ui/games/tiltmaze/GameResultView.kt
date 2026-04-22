@@ -1,5 +1,6 @@
 package com.example.brain_land.ui.games.tiltmaze
 
+import android.content.Context
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
@@ -99,6 +100,9 @@ fun GameResultSheet(
     elapsed:           Int,
     difficulty:        Int,
     gridSize:          Int,
+    moves:             Int = 0,
+    hintsUsed:         Int = 0,
+    correct:           Boolean = true,
     onNextPuzzle:      () -> Unit,
     onPlayAgain:       () -> Unit,
     onBackToGames:     () -> Unit,
@@ -119,6 +123,9 @@ fun GameResultSheet(
             elapsed          = elapsed,
             difficulty       = difficulty,
             gridSize         = gridSize,
+            moves            = moves,
+            hintsUsed        = hintsUsed,
+            correct          = correct,
             onNextPuzzle     = onNextPuzzle,
             onPlayAgain      = onPlayAgain,
             onBackToGames    = onBackToGames,
@@ -138,6 +145,9 @@ private fun GameResultContent(
     elapsed:          Int,
     difficulty:       Int,
     gridSize:         Int,
+    moves:            Int,
+    hintsUsed:        Int,
+    correct:          Boolean,
     onNextPuzzle:     () -> Unit,
     onPlayAgain:      () -> Unit,
     onBackToGames:    () -> Unit,
@@ -153,8 +163,24 @@ private fun GameResultContent(
 
     // Stable suggestions — mirrors iOS suggestedGames (computed once on appear)
     val suggestions = remember { randomSuggestions(excludingId = gameId, count = 2) }
+    val prefs = context.getSharedPreferences("game_streaks_prefs", Context.MODE_PRIVATE)
+    var localStreak by remember { mutableIntStateOf(prefs.getInt("${gameId}_streak", 0)) }
+    var streakProcessed by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
+        if (!streakProcessed) {
+            val key = "${gameId}_streak"
+            var current = prefs.getInt(key, 0)
+            if (correct) {
+                current += 1
+            } else {
+                current = 0
+            }
+            prefs.edit().putInt(key, current).apply()
+            localStreak = current
+            streakProcessed = true
+        }
+
         kotlinx.coroutines.delay(80)
         showContent = true
         scope.launch {
@@ -162,8 +188,9 @@ private fun GameResultContent(
                 gameId       = gameId,
                 level        = level,
                 difficulty   = difficulty,
-                correct      = true,
-                responseTime = maxOf(1.0, elapsed.toDouble())
+                correct      = correct,
+                responseTime = maxOf(1.0, elapsed.toDouble()),
+                hintsUsed    = hintsUsed
             )
             apiCompleted = true
         }
@@ -231,6 +258,7 @@ private fun GameResultContent(
             RatingSection(
                 response     = resultResponse,
                 apiCompleted = apiCompleted,
+                localStreak  = localStreak,
                 modifier     = Modifier.fillMaxWidth().padding(horizontal = 20.dp).animateContentSize()
             )
 
@@ -253,7 +281,7 @@ private fun GameResultContent(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
-                        StreakCard(response = resultResponse, apiCompleted = apiCompleted, modifier = Modifier.weight(1f))
+                        StreakCard(response = resultResponse, apiCompleted = apiCompleted, localStreak = localStreak, modifier = Modifier.weight(1f))
                         SolveTimeCard(elapsed = elapsed, difficulty = difficulty, modifier = Modifier.weight(1f))
                     }
                 }
@@ -284,6 +312,8 @@ private fun GameResultContent(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    Spacer(Modifier.height(8.dp))
+
                     // Next Puzzle — gradient capsule
                     Button(
                         onClick = onNextPuzzle,
@@ -458,6 +488,7 @@ private fun OptionCard(
 private fun RatingSection(
     response:     GameResultResponse?,
     apiCompleted: Boolean,
+    localStreak:  Int,
     modifier:     Modifier = Modifier
 ) {
     Column(
@@ -527,9 +558,9 @@ private fun RatingSection(
 private fun StreakCard(
     response:     GameResultResponse?,
     apiCompleted: Boolean,
+    localStreak:  Int,
     modifier:     Modifier = Modifier
 ) {
-    val streak      = response?.newStreak   ?: 0
     val scoreGained = response?.scoreGained ?: 0
 
     Box(
@@ -554,10 +585,10 @@ private fun StreakCard(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(Icons.Default.LocalFireDepartment, null,
-                    tint = if (streak > 0) Color(0xFFFF9500) else Color.White.copy(.3f),
+                    tint = if (localStreak > 0) Color(0xFFFF9500) else Color.White.copy(.3f),
                     modifier = Modifier.size(16.dp))
                 if (apiCompleted || response != null) {
-                    Text("$streak× Streak", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(.9f))
+                    Text("$localStreak× Streak", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(.9f))
                 } else {
                     CircularProgressIndicator(color = Color.White.copy(.3f), modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
                 }
@@ -636,3 +667,4 @@ private fun tierColor(tier: String): Color = when (tier.lowercase()) {
     "silver"   -> Color(0xFFC0C0C0)
     else       -> Color(0xFFCD7F32)
 }
+

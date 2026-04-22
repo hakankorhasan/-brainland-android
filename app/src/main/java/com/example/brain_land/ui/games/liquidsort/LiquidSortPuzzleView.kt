@@ -105,6 +105,8 @@ fun LiquidSortPuzzleView(
                 elapsed    = lastElapsed,
                 difficulty = LiquidSortGenerator.difficultyLevel(engine.levelNumber),
                 gridSize   = engine.bottles.size,
+                moves      = engine.moveCount,
+                hintsUsed  = engine.undoCount,
                 onNextPuzzle = {
                     showWin = false
                     timerSecs = 0
