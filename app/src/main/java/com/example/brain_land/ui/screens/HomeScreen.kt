@@ -997,15 +997,7 @@ private fun LeaderboardTabContent(leaderboard: LeaderboardResponse?, isLoading: 
 
 @Composable
 private fun ProfileTabContent(nickname: String, avatarUrl: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BgCard)
-            .statusBarsPadding(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("👤 Profile\n(Coming soon)", color = Color.White, textAlign = TextAlign.Center, fontSize = 18.sp)
-    }
+    ProfileScreen()
 }
 
 // ──────────────────────────────────────────────────────────────

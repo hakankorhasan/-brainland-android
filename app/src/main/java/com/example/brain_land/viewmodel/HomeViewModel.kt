@@ -26,6 +26,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val playerProfile   = MutableStateFlow<com.example.brain_land.data.PlayerProfileData?>(null)
     val isLoadingProfile = MutableStateFlow(true)
 
+    // ── Full Player Profile (for ProfileScreen) — mirrors iOS ProfileView ──
+    val playerProfileFull     = MutableStateFlow<com.example.brain_land.data.PlayerProfileFullResponse?>(null)
+    val isLoadingProfileFull  = MutableStateFlow(false)
+    val isRefreshingProfile   = MutableStateFlow(false)
+
     // ── Leaderboard ──
     val leaderboard     = MutableStateFlow<LeaderboardResponse?>(null)
     val isLoadingLeader = MutableStateFlow(true)
@@ -62,6 +67,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Slim profile for HomeScreen RatingCard */
     fun fetchProfile() {
         viewModelScope.launch {
             isLoadingProfile.value = true
@@ -70,6 +76,34 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 playerProfile.value = repo.fetchPlayerProfile(deviceId)
             }
             isLoadingProfile.value = false
+        }
+    }
+
+    /** Full profile for ProfileScreen — uses 5 min cache, mirrors iOS fetchAll() */
+    fun fetchFullProfile(forceRefresh: Boolean = false) {
+        viewModelScope.launch {
+            if (!forceRefresh && playerProfileFull.value != null) return@launch
+            isLoadingProfileFull.value = true
+            val deviceId = prefs.deviceId.first()
+            if (deviceId.isNotEmpty()) {
+                playerProfileFull.value = repo.fetchFullProfile(deviceId, forceRefresh)
+                // Also update the slim profile on HomeScreen
+                playerProfileFull.value?.toProfileData()?.let { playerProfile.value = it }
+            }
+            isLoadingProfileFull.value = false
+        }
+    }
+
+    /** Pull-to-refresh for ProfileScreen — force bypasses cache */
+    fun refreshProfile() {
+        viewModelScope.launch {
+            isRefreshingProfile.value = true
+            val deviceId = prefs.deviceId.first()
+            if (deviceId.isNotEmpty()) {
+                playerProfileFull.value = repo.fetchFullProfile(deviceId, forceRefresh = true)
+                playerProfileFull.value?.toProfileData()?.let { playerProfile.value = it }
+            }
+            isRefreshingProfile.value = false
         }
     }
 
