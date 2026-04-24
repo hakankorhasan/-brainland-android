@@ -249,6 +249,122 @@ class HomeRepository {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
+    // GET /getDailyChallenge?deviceId=XXX  — mirrors iOS DailyChallengeManager.fetchDailyChallenge()
+    // ──────────────────────────────────────────────────────────────────────────
+
+    suspend fun fetchDailyChallenge(deviceId: String): DailyChallengeResponse? =
+        withContext(Dispatchers.IO) {
+            try {
+                val text = get("$BASE/getDailyChallenge?deviceId=$deviceId")
+                val json = JSONObject(text)
+                if (!json.optBoolean("success", false)) return@withContext null
+
+                val dateStr    = json.optString("date", "")
+                val nextReset  = json.optInt("nextResetIn", 0)
+
+                // Puzzles
+                val puzzlesArr = json.optJSONArray("puzzles") ?: JSONArray()
+                val puzzles = (0 until puzzlesArr.length()).map { i ->
+                    val p = puzzlesArr.getJSONObject(i)
+                    DailyPuzzle(
+                        puzzleIndex = p.optInt("puzzleIndex", i + 1),
+                        gameId      = p.optString("gameId", "")
+                    )
+                }
+
+                // Progress
+                val prog = json.optJSONObject("progress")
+                val completedArr = prog?.optJSONArray("completedPuzzles") ?: JSONArray()
+                val completed = (0 until completedArr.length()).map { completedArr.getInt(it) }
+                val totalScore = prog?.optInt("totalScore", 0) ?: 0
+                val allDone    = prog?.optBoolean("allCompleted", false) ?: false
+
+                // Puzzle results
+                val resultsMap = mutableMapOf<String, DailyPuzzleResult>()
+                val resultsJson = prog?.optJSONObject("puzzleResults")
+                resultsJson?.keys()?.forEach { key ->
+                    val r = resultsJson.optJSONObject(key) ?: return@forEach
+                    resultsMap[key] = DailyPuzzleResult(
+                        score        = r.optInt("score", 0),
+                        responseTime = r.optDouble("responseTime", 0.0),
+                        correct      = r.optBoolean("correct", false),
+                        gameId       = r.optString("gameId", "")
+                    )
+                }
+
+                // Streak
+                val streakJson = json.optJSONObject("streak")
+                val streak = DailyStreak(
+                    currentStreak      = streakJson?.optInt("currentStreak", 0) ?: 0,
+                    bestStreak         = streakJson?.optInt("bestStreak", 0) ?: 0,
+                    totalDaysCompleted = streakJson?.optInt("totalDaysCompleted", 0) ?: 0,
+                    totalPuzzlesSolved = streakJson?.optInt("totalPuzzlesSolved", 0) ?: 0
+                )
+
+                DailyChallengeResponse(
+                    date           = dateStr,
+                    puzzles        = puzzles,
+                    completedPuzzles = completed,
+                    puzzleResults  = resultsMap,
+                    totalScore     = totalScore,
+                    allCompleted   = allDone,
+                    streak         = streak,
+                    nextResetIn    = nextReset
+                )
+            } catch (e: Exception) {
+                Log.e(TAG_HOME, "fetchDailyChallenge error: ${e.message}")
+                null
+            }
+        }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // POST /submitDailyPuzzle  — mirrors iOS DailyChallengeManager.submitPuzzle()
+    // ──────────────────────────────────────────────────────────────────────────
+
+    suspend fun submitDailyPuzzle(
+        deviceId: String,
+        puzzleIndex: Int,
+        correct: Boolean,
+        responseTime: Double,
+        gameId: String,
+        difficulty: Int
+    ): DailySubmitResponse? = withContext(Dispatchers.IO) {
+        try {
+            val body = JSONObject().apply {
+                put("deviceId",     deviceId)
+                put("puzzleIndex",  puzzleIndex)
+                put("correct",      correct)
+                put("responseTime", responseTime)
+                put("gameId",       gameId)
+                put("difficulty",   difficulty)
+            }
+            val text = post("$BASE/submitDailyPuzzle", body.toString())
+            val json = JSONObject(text)
+            if (!json.optBoolean("success", false)) return@withContext null
+
+            val streakJson = json.optJSONObject("streak")
+            val streak = DailyStreak(
+                currentStreak      = streakJson?.optInt("currentStreak", 0) ?: 0,
+                bestStreak         = streakJson?.optInt("bestStreak", 0) ?: 0,
+                totalDaysCompleted = streakJson?.optInt("totalDaysCompleted", 0) ?: 0,
+                totalPuzzlesSolved = streakJson?.optInt("totalPuzzlesSolved", 0) ?: 0
+            )
+            DailySubmitResponse(
+                puzzleScore    = json.optInt("puzzleScore", 0),
+                totalDailyScore = json.optInt("totalDailyScore", 0),
+                completedCount  = json.optInt("completedCount", 0),
+                allCompleted    = json.optBoolean("allCompleted", false),
+                bonusScore      = if (json.has("bonusScore")) json.optInt("bonusScore") else null,
+                finalScore      = if (json.has("finalScore")) json.optInt("finalScore") else null,
+                streak          = streak
+            )
+        } catch (e: Exception) {
+            Log.e(TAG_HOME, "submitDailyPuzzle error: ${e.message}")
+            null
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     // HTTP helper
     // ──────────────────────────────────────────────────────────────────────────
 
@@ -260,13 +376,68 @@ class HomeRepository {
         return try { conn.inputStream.bufferedReader().readText() }
         finally { conn.disconnect() }
     }
+
+    private fun post(urlStr: String, json: String): String {
+        val conn = java.net.URL(urlStr).openConnection() as java.net.HttpURLConnection
+        conn.requestMethod = "POST"
+        conn.doOutput = true
+        conn.setRequestProperty("Content-Type", "application/json")
+        conn.connectTimeout = 10_000
+        conn.readTimeout    = 15_000
+        conn.outputStream.bufferedWriter().use { it.write(json) }
+        return try { conn.inputStream.bufferedReader().readText() }
+        finally { conn.disconnect() }
+    }
 }
 
 // ────────────────────────────────────────────────────────────
-// Data Models — mirrors iOS PlayerProfileResponse family
+// Daily Challenge Models — mirrors iOS DailyChallengeManager
 // ────────────────────────────────────────────────────────────
 
-/** Minimal model still used on HomeScreen's RatingCard */
+data class DailyPuzzle(
+    val puzzleIndex: Int,
+    val gameId: String
+) {
+    val gameType: GameType? get() = GameType.from(gameId)
+    val gameName: String    get() = gameType?.displayName ?: gameId
+}
+
+data class DailyPuzzleResult(
+    val score: Int,
+    val responseTime: Double,
+    val correct: Boolean,
+    val gameId: String
+)
+
+data class DailyStreak(
+    val currentStreak: Int,
+    val bestStreak: Int,
+    val totalDaysCompleted: Int,
+    val totalPuzzlesSolved: Int
+)
+
+data class DailyChallengeResponse(
+    val date: String,
+    val puzzles: List<DailyPuzzle>,
+    val completedPuzzles: List<Int>,
+    val puzzleResults: Map<String, DailyPuzzleResult>,
+    val totalScore: Int,
+    val allCompleted: Boolean,
+    val streak: DailyStreak,
+    val nextResetIn: Int
+)
+
+data class DailySubmitResponse(
+    val puzzleScore: Int,
+    val totalDailyScore: Int,
+    val completedCount: Int,
+    val allCompleted: Boolean,
+    val bonusScore: Int?,
+    val finalScore: Int?,
+    val streak: DailyStreak
+)
+
+/** Minimal model used on HomeScreen's RatingCard */
 data class PlayerProfileData(
     val weightedGlobalScore: Int,
     val globalScore: Int,

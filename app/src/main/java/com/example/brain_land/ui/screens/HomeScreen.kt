@@ -3,6 +3,7 @@ package com.example.brain_land.ui.screens
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,6 +37,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.brain_land.R
 import com.example.brain_land.data.GameType
 import com.example.brain_land.data.LeaderboardPlayer
 import com.example.brain_land.data.LeaderboardResponse
@@ -75,6 +78,7 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
 
     var selectedTab  by remember { mutableStateOf(HomeTab.HOME) }
     var activeGame   by remember { mutableStateOf<GameType?>(null) }
+    var showDailyChallenge by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -95,7 +99,8 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                     completedPuzzles = daily,
                     streak           = streak,
                     onPlayGame       = { game -> activeGame = game },
-                    onTabChange      = { selectedTab = it }
+                    onTabChange      = { selectedTab = it },
+                    onOpenDailyChallenge = { showDailyChallenge = true }
                 )
             HomeTab.GAMES ->
                 GamesTabContent(
@@ -108,13 +113,28 @@ fun HomeScreen(vm: HomeViewModel = viewModel()) {
                 ProfileTabContent(nickname = nickname, avatarUrl = avatarUrl)
         }
 
-        // ── Tab Bar — hidden when a game is active ──
-        if (activeGame == null) {
+        // ── Tab Bar — hidden when a game or daily challenge is active ──
+        if (activeGame == null && !showDailyChallenge) {
             BrainLandTabBar(
                 selectedTab   = selectedTab,
                 onTabSelected = { selectedTab = it },
                 modifier      = Modifier.align(Alignment.BottomCenter)
             )
+        }
+
+        // ── Daily Challenge full-screen overlay ──
+        if (showDailyChallenge) {
+            Box(
+                modifier = Modifier.fillMaxSize()
+                    .background(Color(0xFF10131B))
+                    .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent() } } }
+            ) {
+                DailyChallengeScreen(
+                    vm          = vm,
+                    onBack      = { showDailyChallenge = false },
+                    onPlayGame  = { game -> activeGame = game; showDailyChallenge = false }
+                )
+            }
         }
 
         // ── Game full-screen overlay (covers tab bar + everything) ──
@@ -309,7 +329,8 @@ private fun HomeTabContent(
     completedPuzzles: Set<Int>,
     streak: Int,
     onPlayGame: (GameType) -> Unit,
-    onTabChange: (HomeTab) -> Unit
+    onTabChange: (HomeTab) -> Unit,
+    onOpenDailyChallenge: () -> Unit
 ) {
     val bgColor = BgCard
 
@@ -341,8 +362,9 @@ private fun HomeTabContent(
                 )
                 DailyChallengeCard(
                     completedPuzzles = completedPuzzles,
-                    streak = streak,
-                    modifier = Modifier.width(140.dp)
+                    streak           = streak,
+                    modifier         = Modifier.width(140.dp),
+                    onClick          = onOpenDailyChallenge
                 )
             }
 
@@ -375,11 +397,6 @@ private fun HomeTabContent(
                     HomeGameCard(game = game, onClick = { onPlayGame(game) })
                 }
             }
-
-            Spacer(Modifier.height(28.dp))
-
-            // ── Story Mode Banner ──
-            StoryModeBanner(modifier = Modifier.padding(horizontal = 16.dp))
 
             Spacer(Modifier.height(28.dp))
 
@@ -509,7 +526,7 @@ private fun RatingCard(
     val myRank  = playerProfile?.rank ?: 0
     val myTier  = playerProfile?.tier ?: "bronze"
 
-    val (tierEmoji, tierClr) = tierInfo(myScore, myTier)
+    val (tierIconRes, tierClr) = tierInfo(myScore, myTier)
 
     Box(
         modifier = modifier
@@ -559,12 +576,28 @@ private fun RatingCard(
                     )
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(tierEmoji, fontSize = 28.sp)
-                Spacer(Modifier.width(6.dp))
-                Text(myTier.uppercase(),
-                    fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = tierClr)
-                Text(" League", fontSize = 12.sp, color = Color.White.copy(alpha = 0.5f))
+            // Bottom row: tier name (left) + tier icon (right)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = myTier.replaceFirstChar { it.uppercase() },
+                        fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = tierClr
+                    )
+                    Text(
+                        text = "League",
+                        fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f)
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+                AsyncImage(
+                    model = tierIconRes,
+                    contentDescription = myTier,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(56.dp)
+                )
             }
         }
     }
@@ -578,7 +611,8 @@ private fun RatingCard(
 private fun DailyChallengeCard(
     completedPuzzles: Set<Int>,
     streak: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     val allCompleted = completedPuzzles.size >= 5
 
@@ -586,6 +620,7 @@ private fun DailyChallengeCard(
         modifier = modifier
             .height(200.dp)
             .clip(RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
             .background(
                 Brush.linearGradient(
                     if (allCompleted)
@@ -1097,14 +1132,14 @@ fun hexToColor(hex: String): Color {
     }
 }
 
-private fun tierInfo(score: Int, tier: String): Pair<String, Color> {
+private fun tierInfo(score: Int, tier: String): Pair<Int, Color> {
     val t = tier.lowercase()
     return when {
-        t == "legend"   || score >= 500000 -> "👑" to Color(0xFFFFD700)
-        t == "diamond"  || score >= 300000 -> "💎" to Color(0xFF00D4FF)
-        t == "platinum" || score >= 150000  -> "⚡" to Color(0xFFE5E4E2)
-        t == "gold"     || score >= 50000  -> "🔱" to Color(0xFFFFAA00)
-        t == "silver"   || score >= 15000  -> "🌙" to Color(0xFFC0C0C0)
-        else                              -> "🛡️" to Color(0xFFCD7F32)
+        t == "legend"   || score >= 15000  -> R.drawable.legend   to Color(0xFFFF6B6B)
+        t == "diamond"  || score >= 10000  -> R.drawable.diamond  to Color(0xFFB9F2FF)
+        t == "platinum" || score >= 6000   -> R.drawable.platinum to Color(0xFF50C9CE)
+        t == "gold"     || score >= 3000   -> R.drawable.gold     to Color(0xFFFFD700)
+        t == "silver"   || score >= 1000   -> R.drawable.silver   to Color(0xFFC0C0C0)
+        else                               -> R.drawable.bronze   to Color(0xFFCD7F32)
     }
 }

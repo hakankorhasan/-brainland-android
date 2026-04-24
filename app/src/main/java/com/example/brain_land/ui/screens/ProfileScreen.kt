@@ -16,12 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -47,12 +42,12 @@ private val CardStroke = Color.White.copy(alpha = 0.06f)
 data class TierDef(val name: String, val color: Color, val iconRes: Int, val minScore: Int)
 
 val allTiers = listOf(
-    TierDef("bronze", Color(0xFFCD7F32), R.drawable.ic_tier_bronze, 0),
-    TierDef("silver", Color(0xFFC0C0C0), R.drawable.ic_tier_silver, 1000),
-    TierDef("gold", Color(0xFFFFD700), R.drawable.ic_tier_gold, 3000),
-    TierDef("platinum", Color(0xFF50C9CE), R.drawable.ic_tier_platinum, 6000),
-    TierDef("diamond", Color(0xFFB9F2FF), R.drawable.ic_tier_diamond, 10000),
-    TierDef("legend", Color(0xFFFF6B6B), R.drawable.ic_tier_legend, 15000),
+    TierDef("bronze",   Color(0xFFCD7F32), R.drawable.bronze,   0),
+    TierDef("silver",   Color(0xFFC0C0C0), R.drawable.silver,   1000),
+    TierDef("gold",     Color(0xFFFFD700), R.drawable.gold,     3000),
+    TierDef("platinum", Color(0xFF50C9CE), R.drawable.platinum, 6000),
+    TierDef("diamond",  Color(0xFFB9F2FF), R.drawable.diamond,  10000),
+    TierDef("legend",   Color(0xFFFF6B6B), R.drawable.legend,   15000),
 )
 
 // ── Achievement model ──
@@ -254,27 +249,13 @@ private fun TierProgressCard(score: Int, tier: String, tierIdx: Int, tp: PlayerP
                                 .background(Color.White.copy(alpha = if (isUnlocked) 0.07f else 0.03f))
                                 .then(if (isActive) Modifier.border(2.dp, t.color, CircleShape) else Modifier)
                         )
-                        // Icon — load as ImageBitmap to get FilterQuality.High
-                        // + ColorMatrix saturation boost for vivid colors on small sizes
-                        val ctx = LocalContext.current
-                        val bmp = remember(t.iconRes) { ImageBitmap.imageResource(ctx.resources, t.iconRes) }
-                        val saturationFilter = remember(isUnlocked) {
-                            if (isUnlocked) {
-                                // Boost saturation so colors pop when downscaled
-                                ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1.6f) })
-                            } else {
-                                // Grayscale for locked tiers
-                                ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
-                            }
-                        }
-                        Image(
-                            bitmap = bmp,
+                        // Use AsyncImage (Coil) — handles density & color space correctly
+                        AsyncImage(
+                            model = t.iconRes,
                             contentDescription = t.name,
                             contentScale = ContentScale.Fit,
-                            modifier = Modifier.size(32.dp),
-                            alpha = if (isUnlocked) 1f else 0.45f,
-                            colorFilter = saturationFilter,
-                            filterQuality = androidx.compose.ui.graphics.FilterQuality.High
+                            modifier = Modifier.size(34.dp),
+                            alpha = if (isUnlocked) 1f else 0.3f
                         )
                     }
                     Spacer(Modifier.height(4.dp))
