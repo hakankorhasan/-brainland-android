@@ -601,10 +601,13 @@ private fun SynapseNode(color: Color, cellSize: Dp) {
 private fun interpolate(from: Pair<Int,Int>, to: Pair<Int,Int>, n: Int): List<Pair<Int,Int>> {
     val result = mutableListOf<Pair<Int,Int>>()
     var r = from.first; var c = from.second
-    while (r != to.first || c != to.second) {
+    val maxIter = n * 2 // safety limit to prevent infinite loops
+    var iter = 0
+    while ((r != to.first || c != to.second) && iter < maxIter) {
         if (r < to.first) r++ else if (r > to.first) r--
-        else if (c < to.first) c++ else if (c > to.second) c--
+        else if (c < to.second) c++ else if (c > to.second) c--
         result.add((r.coerceIn(0, n-1)) to (c.coerceIn(0, n-1)))
+        iter++
     }
     return result
 }

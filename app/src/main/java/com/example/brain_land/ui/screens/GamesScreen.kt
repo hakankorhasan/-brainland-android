@@ -215,7 +215,9 @@ fun GamesScreen(
                                 val gt = item.resolvedType
                                 if (gt != null) {
                                     val context = LocalContext.current
-                                    val level   = remember(gt) { readGameLevel(context, gt) }
+                                    // Read level fresh on every recomposition so it
+                                    // updates when the user returns from a game.
+                                    val level = readGameLevel(context, gt)
                                     GameCard(
                                         game        = gt,
                                         backendName = item.displayName,
@@ -568,10 +570,19 @@ private fun GameEmptyState() {
 
 private fun readGameLevel(context: android.content.Context, game: GameType): Int {
     val (prefsName, key) = when (game) {
-        GameType.TILT_MAZE   -> "tiltmaze_prefs"   to "currentLevel"
-        GameType.LIQUID_SORT -> "liquidsort_prefs"  to "currentLevel"
-        GameType.PATH_CLEARING -> "arrowpuzzle_prefs" to "currentLevel"
-        else                 -> return 1
+        GameType.TILT_MAZE        -> "tiltmaze_prefs"        to "currentLevel"
+        GameType.LIQUID_SORT      -> "liquidsort_prefs"      to "currentLevel"
+        GameType.PATH_CLEARING    -> "arrowpuzzle_prefs"     to "currentLevel"
+        GameType.NEURAL_LINK      -> "neurallink_prefs"      to "currentLevel"
+        GameType.PIPE_CONNECT     -> "pipeconnect_prefs"     to "currentLevel"
+        GameType.NONOGRAM         -> "nonogram_prefs"        to "currentLevel"
+        GameType.BLOCK_FIT        -> "block_fit_prefs"       to "currentLevel"
+        GameType.SLITHERLINK      -> "slitherlink_prefs"     to "currentLevel"
+        GameType.LASER_PUZZLE     -> "laser_prefs"           to "currentLevel"
+        GameType.NUMBER_CIRCUIT   -> "number_circuit_prefs"  to "currentLevel"
+        GameType.WORD_PUZZLE      -> "wordpuzzle_prefs"      to "wordPuzzle_currentLevel"
+        GameType.GALACTIC_BEACONS -> "star_battle_prefs"     to "currentLevel"
+        else                      -> return 1
     }
     return context
         .getSharedPreferences(prefsName, android.content.Context.MODE_PRIVATE)
