@@ -494,7 +494,7 @@ private fun DraggableBlock(
         modifier = Modifier
             .fillMaxSize()    // fills slot
             .onGloballyPositioned { slotOriginPx = it.positionInWindow() }
-            .pointerInput(block.id) {
+            .pointerInput(block) {
                 detectDragGestures(
                     onDragStart = { localOffset ->
                         startLocalPos = localOffset
