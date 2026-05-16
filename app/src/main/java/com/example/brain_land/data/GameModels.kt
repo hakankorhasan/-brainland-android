@@ -10,7 +10,7 @@ enum class GameType(val displayName: String, val gameId: String) {
     SLITHERLINK("Slitherlink", "slitherlink"),
     BLOCK_FIT("Block Fit", "blockFit"),
     CRYPTO_CAGE("Crypto-Cage", "cryptoCage"),
-    NEURAL_LINK("Neural Link", "neuralLink"),
+    NEURAL_LINK("Flow", "neuralLink"),
     GALACTIC_BEACONS("Galactic Beacons", "galacticBeacons"),
     NUMBER_CIRCUIT("Number Circuit", "numberCircuit"),
     WORD_PUZZLE("Word Puzzle", "wordPuzzle"),
@@ -66,7 +66,7 @@ enum class GameType(val displayName: String, val gameId: String) {
     // null = fall back to emoji text
     val assetIcon: Int? get() = when (this) {
         PIPE_CONNECT     -> com.example.brain_land.R.drawable.game_icon_pipe_connect
-        NEURAL_LINK      -> com.example.brain_land.R.drawable.game_icon_neural_link
+        NEURAL_LINK      -> com.example.brain_land.R.drawable.flow
         TILT_MAZE        -> com.example.brain_land.R.drawable.game_icon_tilt_maze
         WORD_PUZZLE      -> com.example.brain_land.R.drawable.game_icon_word_puzzle
         LIQUID_SORT      -> com.example.brain_land.R.drawable.game_icon_liquid_sort
