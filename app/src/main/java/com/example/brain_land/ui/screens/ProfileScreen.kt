@@ -84,6 +84,8 @@ fun ProfileScreen(vm: HomeViewModel = viewModel()) {
     val tierIdx = allTiers.indexOfFirst { it.name.equals(myTier, true) }.coerceAtLeast(0)
     val currentTier = allTiers[tierIdx]
 
+    var showEditSheet by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier.fillMaxSize().background(ProfileBg).statusBarsPadding()
     ) {
@@ -94,6 +96,21 @@ fun ProfileScreen(vm: HomeViewModel = viewModel()) {
         ) {
             Text("Profile", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(Modifier.weight(1f))
+            
+            // Edit Button
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(PCyan.copy(alpha = 0.1f))
+                    .border(1.dp, PCyan.copy(alpha = 0.25f), RoundedCornerShape(50))
+                    .clickable { showEditSheet = true }
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = PCyan, modifier = Modifier.size(13.dp))
+                Text("Edit", color = PCyan, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
 
         if (isLoading && profileData == null) {
@@ -130,6 +147,13 @@ fun ProfileScreen(vm: HomeViewModel = viewModel()) {
                 Spacer(Modifier.height(100.dp))
             }
         }
+    }
+    
+    if (showEditSheet) {
+        EditProfileSheet(
+            vm = vm,
+            onDismiss = { showEditSheet = false }
+        )
     }
 }
 

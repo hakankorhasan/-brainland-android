@@ -130,6 +130,31 @@ class Repository {
         }
     }
 
+    suspend fun updateProfile(deviceId: String, nickname: String?, avatarId: String?): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val body = JSONObject().apply {
+                put("deviceId", deviceId)
+                nickname?.let { put("nickname", it) }
+                avatarId?.let { put("avatarId", it) }
+            }.toString()
+
+            val (status, text) = putReq("$BASE_URL/updateProfile", body)
+            Log.d(TAG, "updateProfile status=$status raw=${text.take(300)}")
+
+            when (status) {
+                in 200..299 -> Result.success(Unit)
+                400 -> {
+                    val msg = JSONObject(text).optString("error", "Invalid input.")
+                    Result.failure(Exception(msg))
+                }
+                else -> Result.failure(Exception("Server error ($status)"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "updateProfile error: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
     suspend fun getProfile(deviceId: String): UserProfile? = withContext(Dispatchers.IO) {
         try {
             val text = get("$BASE_URL/getProfile?deviceId=$deviceId")
@@ -183,6 +208,21 @@ class Repository {
         return status to text
     }
 
+    private fun putReq(urlStr: String, jsonBody: String): Pair<Int, String> {
+        val conn = URL(urlStr).openConnection() as HttpURLConnection
+        conn.requestMethod  = "PUT"
+        conn.doOutput       = true
+        conn.connectTimeout = 10_000
+        conn.readTimeout    = 15_000
+        conn.setRequestProperty("Content-Type", "application/json")
+        conn.outputStream.write(jsonBody.toByteArray())
+        val status = conn.responseCode
+        val stream = if (status in 200..299) conn.inputStream else conn.errorStream
+        val text   = stream?.bufferedReader()?.readText() ?: ""
+        conn.disconnect()
+        return status to text
+    }
+
     // ──────────────────────────────────────────────────────────
     // URL fixer — mirrors iOS OnboardingManager logic exactly:
     // https://storage.googleapis.com/BUCKET/path/to/file
@@ -190,18 +230,20 @@ class Repository {
     // ──────────────────────────────────────────────────────────
 
     private fun fixStorageUrl(url: String): String {
+        // Only fix if it starts exactly with the plain storage domain
+        if (!url.startsWith("https://storage.googleapis.com/") && !url.startsWith("http://storage.googleapis.com/")) {
+            return url
+        }
+
         val marker = "storage.googleapis.com/"
-        if (!url.contains(marker)) return url
+        val afterDomain = url.substringAfter(marker)
+        val parts = afterDomain.split("/", limit = 2)
+        if (parts.size < 2) return url
 
-        val afterDomain = url.substringAfter(marker)  // "BUCKET/path/to/file"
-        val slashIdx = afterDomain.indexOf('/')
-        if (slashIdx == -1) return url
-
-        val bucket = afterDomain.substring(0, slashIdx)          // "BUCKET"
-        val rawPath = afterDomain.substring(slashIdx + 1)        // "path/to/file"
-        // Encode the path: every '/' becomes '%2F' (same as iOS addingPercentEncoding + replace)
+        val bucket = parts[0]
+        val rawPath = parts[1]
+        
         val encodedPath = rawPath.replace("/", "%2F")
-
         return "https://firebasestorage.googleapis.com/v0/b/$bucket/o/$encodedPath?alt=media"
     }
 

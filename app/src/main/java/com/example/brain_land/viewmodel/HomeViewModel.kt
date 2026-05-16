@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repo  = HomeRepository()
+    private val mainRepo = com.example.brain_land.data.Repository()
     private val prefs = PreferencesManager(application)
 
     // ── Profile (from DataStore) ──
@@ -35,6 +36,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val playerProfileFull     = MutableStateFlow<com.example.brain_land.data.PlayerProfileFullResponse?>(null)
     val isLoadingProfileFull  = MutableStateFlow(false)
     val isRefreshingProfile   = MutableStateFlow(false)
+
+    // ── Edit Profile ──
+    val avatars          = MutableStateFlow<List<com.example.brain_land.data.AvatarItem>>(emptyList())
+    val isLoadingAvatars = MutableStateFlow(false)
+    val isSavingProfile  = MutableStateFlow(false)
 
     // ── Leaderboard ──
     val leaderboard     = MutableStateFlow<LeaderboardResponse?>(null)
@@ -122,6 +128,45 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 playerProfileFull.value?.toProfileData()?.let { playerProfile.value = it }
             }
             isRefreshingProfile.value = false
+        }
+    }
+
+    fun fetchAvatars() {
+        if (avatars.value.isNotEmpty()) return
+        viewModelScope.launch {
+            isLoadingAvatars.value = true
+            avatars.value = mainRepo.fetchAvatars()
+            isLoadingAvatars.value = false
+        }
+    }
+
+    fun updateProfile(newNickname: String?, newAvatarId: String?, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            isSavingProfile.value = true
+            val deviceId = prefs.deviceId.first()
+
+            val result = mainRepo.updateProfile(deviceId, newNickname, newAvatarId)
+            if (result.isSuccess) {
+                // Update local datastore
+                val currentNick = nickname.value
+                val currentUrl = avatarUrl.value
+                
+                val updatedNick = newNickname ?: currentNick
+                val updatedUrl = newAvatarId?.let { id ->
+                    avatars.value.firstOrNull { it.id == id }?.url
+                } ?: currentUrl
+
+                prefs.saveProfile(updatedNick, updatedUrl)
+                nickname.value = updatedNick
+                avatarUrl.value = updatedUrl
+
+                // Refresh profile data
+                fetchFullProfile(forceRefresh = true)
+                onSuccess()
+            } else {
+                onError(result.exceptionOrNull()?.message ?: "Unknown error")
+            }
+            isSavingProfile.value = false
         }
     }
 
